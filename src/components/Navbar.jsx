@@ -4,9 +4,13 @@ export default function Navbar() {
     return (
         <div className="w-64 h-screen bg-white shadow-md p-5">
 
-            
-            <NavLink to="/">
-                <h1 className="text-xl font-bold text-orange-500 mb-8 cursor-pointer hover:text-orange-600 transition">
+
+            <NavLink
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                className="block mb-8"
+            >
+                <h1 className="text-xl font-bold text-orange-500 cursor-pointer hover:text-orange-600 transition">
                     Hytoma CRM
                 </h1>
             </NavLink>
