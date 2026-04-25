@@ -72,9 +72,9 @@ export default function SalesPerformance() {
           pending,
           percentage: target > 0 ? ((achieved / target) * 100).toFixed(1) : 0,
         };
-        if (monthlyData[key]?.[person]) {
-          carryForward[person] = pending > 0 ? pending : 0;
-        }
+        
+        carryForward[person] = pending > 0 ? pending : 0;
+        
       });
     }
   });
