@@ -70,7 +70,7 @@ export default function Dashboard() {
     const totalLeads = filteredLeads.length;
     const newLeads = filteredLeads.filter((l) => l.isNew === true).length;
     const interested = filteredLeads.filter((l) => l.status === "Interested").length;
-    const converted = filteredLeads.filter((l) => l.status === "Closed Won").length;
+    const converted = leads.filter(l => Number(l.advancePaid || 0) > 0).length;
     const revenue = filteredLeads.reduce((sum, l) => sum + (Number(l.advancePaid) || 0), 0);
     const pendingFollowUps = filteredLeads.filter((l) => l.status !== "Closed Won").length;
 
