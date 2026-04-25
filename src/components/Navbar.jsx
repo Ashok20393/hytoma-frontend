@@ -4,7 +4,7 @@ export default function Navbar() {
     return (
         <div className="w-64 h-screen bg-white shadow-md p-5">
 
-            {/* LOGO */}
+            
             <NavLink to="/">
                 <h1 className="text-xl font-bold text-orange-500 mb-8 cursor-pointer hover:text-orange-600 transition">
                     Hytoma CRM
