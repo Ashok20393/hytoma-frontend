@@ -45,9 +45,7 @@ export default function SalesPerformance() {
   leads.forEach((lead) => {
     if (!lead.createdAt) return;
     const month = getMonthKey(lead.createdAt);
-    const rawName = (lead.salesPerson || "").toLowerCase();
-    const nameMap = { kk: "revathi", anusha: "manoj", jhjgj: "suresh" };
-    const person = nameMap[rawName] || rawName;
+    const person = (lead.salesPerson || "").toLowerCase().trim(); // ✅ remove nameMap entirely
     if (!monthlyData[month]) monthlyData[month] = {};
     if (!monthlyData[month][person]) monthlyData[month][person] = { revenue: 0 };
     monthlyData[month][person].revenue += Number(lead.advancePaid) || 0;
@@ -56,10 +54,22 @@ export default function SalesPerformance() {
   const finalData = {};
   let carryForward = {};
 
+  const startYear = 2026;
+  const startMonth = 3;
+
   years.forEach((year) => {
     for (let m = 0; m < 12; m++) {
       const key = `${year}-${m}`;
       finalData[key] = {};
+
+      // ✅ Before start date — set zeros, no carry forward update
+      if (year < startYear || (year === startYear && m < startMonth)) {
+        Object.keys(targets).forEach((person) => {
+          finalData[key][person] = { achieved: 0, target: 0, pending: 0, percentage: 0 };
+        });
+        continue; // ✅ 'continue' works inside for loop correctly
+      }
+
       Object.keys(targets).forEach((person) => {
         const baseTarget = targets[person];
         const achieved = monthlyData[key]?.[person]?.revenue || 0;
@@ -72,9 +82,7 @@ export default function SalesPerformance() {
           pending,
           percentage: target > 0 ? ((achieved / target) * 100).toFixed(1) : 0,
         };
-        
-        carryForward[person] = pending > 0 ? pending : 0;
-        
+        carryForward[person] = pending > 0 ? pending : 0; // ✅ always update
       });
     }
   });
