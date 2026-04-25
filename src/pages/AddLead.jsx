@@ -1,0 +1,233 @@
+import { useState } from "react";
+import { addLead } from "../services/api";
+import { useNavigate } from "react-router-dom";
+
+export default function AddLead() {
+  const navigate = useNavigate();
+  const [toast, setToast] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    status: "",
+    isNew: false,
+    salesPerson: "",
+    totalAmount: "",
+    advancePaid: "",
+    quotationSent: false,
+    acceptanceReason: "",
+    rejectionReason: "",
+    followUpDate: "",
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!/^\d{10}$/.test(form.phone)) {
+      setToast("❌ Please enter a valid 10-digit phone number");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+
+    if (!form.status) {
+      setToast("❌ Please select a status");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+
+    try {
+      await addLead(form);
+      setToast("✅ Lead Added Successfully");
+      setTimeout(() => {
+        setToast("");
+        navigate("/leads");
+      }, 1500); // ✅ auto navigate after 1.5s
+    } catch (err) {
+      console.error(err);
+      setToast("❌ Error adding lead");
+      setTimeout(() => setToast(""), 3000);
+    }
+  };
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        Add New Lead
+      </h1>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Name + Phone */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <input
+              placeholder="Customer Name"
+              value={form.name}
+              required
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="border px-3 py-2 rounded-lg w-full"
+            />
+
+            {/* ✅ Phone — numbers only, max 10 digits */}
+            <div>
+              <input
+                placeholder="Phone Number (10 digits)"
+                value={form.phone}
+                required
+                maxLength={10}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, ""); // only numbers
+                  if (val.length <= 10) {
+                    setForm({ ...form, phone: val });
+                  }
+                }}
+                className={`border px-3 py-2 rounded-lg w-full ${form.phone && form.phone.length !== 10
+                  ? "border-red-400 focus:ring-red-300"
+                  : "focus:ring-orange-300"
+                  }`}
+              />
+              {/* ✅ Live feedback */}
+              {form.phone && form.phone.length !== 10 && (
+                <p className="text-red-500 text-xs mt-1">
+                  {form.phone.length}/10 digits entered
+                </p>
+              )}
+              {form.phone && form.phone.length === 10 && (
+                <p className="text-green-500 text-xs mt-1">✔ Valid number</p>
+              )}
+            </div>
+          </div>
+
+          {/* Is New Lead Checkbox */}
+          <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-orange-50 transition">
+            <input
+              type="checkbox"
+              checked={form.isNew}
+              onChange={(e) => setForm({ ...form, isNew: e.target.checked })}
+              className="w-4 h-4 accent-orange-500"
+            />
+            <span className="text-gray-700 font-medium">Is this a New Lead?</span>
+            {form.isNew && (
+              <span className="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full font-medium">
+                New
+              </span>
+            )}
+          </label>
+
+          {/* Status dropdown */}
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          >
+            <option value="" disabled>Select Status</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Interested">Interested</option>
+            <option value="Quotation Sent">Quotation Sent</option>
+            <option value="Closed Won">Closed Won</option>
+            <option value="Closed Lost">Closed Lost</option>
+          </select>
+
+          {/* Sales Person */}
+          <input
+            placeholder="Sales Person"
+            value={form.salesPerson}
+            onChange={(e) => setForm({ ...form, salesPerson: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+
+          {/* Amounts */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <input
+              type="number"
+              placeholder="Total Amount"
+              value={form.totalAmount}
+              onChange={(e) =>
+                setForm({ ...form, totalAmount: Number(e.target.value) })
+              }
+              className="border px-3 py-2 rounded-lg w-full"
+            />
+            <input
+              type="number"
+              placeholder="Advance Paid"
+              value={form.advancePaid}
+              onChange={(e) =>
+                setForm({ ...form, advancePaid: Number(e.target.value) })
+              }
+              className="border px-3 py-2 rounded-lg w-full"
+            />
+          </div>
+
+          {/* Remaining */}
+          <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+            Remaining: ₹{(form.totalAmount || 0) - (form.advancePaid || 0)}
+          </div>
+
+          {/* Quotation */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.quotationSent}
+              onChange={(e) =>
+                setForm({ ...form, quotationSent: e.target.checked })
+              }
+              className="w-4 h-4 accent-orange-500"
+            />
+            <span className="text-gray-700">Quotation Sent</span>
+          </label>
+
+          {/* Acceptance / Rejection */}
+          <input
+            placeholder="Acceptance Reason"
+            value={form.acceptanceReason}
+            onChange={(e) =>
+              setForm({ ...form, acceptanceReason: e.target.value })
+            }
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+          <input
+            placeholder="Rejection Reason"
+            value={form.rejectionReason}
+            onChange={(e) =>
+              setForm({ ...form, rejectionReason: e.target.value })
+            }
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+
+          {/* Follow-up Date */}
+          <input
+            type="date"
+            value={form.followUpDate}
+            onChange={(e) =>
+              setForm({ ...form, followUpDate: e.target.value })
+            }
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-3">
+            <button
+              type="button"
+              onClick={() => navigate("/leads")}
+              className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+            >
+              Save Lead
+            </button>
+          </div>
+
+        </form>
+      </div>
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-lg text-sm animate-fade-in">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
