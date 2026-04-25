@@ -38,7 +38,7 @@ export const logoutUser = async () => {
     method: "POST",
     credentials: "include",
   });
-
+  localStorage.removeItem("role");
   window.location.href = "/login";
 };
 
