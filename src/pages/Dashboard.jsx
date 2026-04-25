@@ -11,6 +11,7 @@ import {
     CartesianGrid,
     LineChart,
     Line,
+    ResponsiveContainer,  // ✅ added
 } from "recharts";
 
 export default function Dashboard() {
@@ -34,9 +35,7 @@ export default function Dashboard() {
         const date = new Date(l.createdAt);
         const now = new Date();
 
-        if (filter === "today") {
-            return date.toDateString() === now.toDateString();
-        }
+        if (filter === "today") return date.toDateString() === now.toDateString();
         if (filter === "week") {
             const firstDay = new Date();
             firstDay.setDate(now.getDate() - now.getDay());
@@ -53,7 +52,7 @@ export default function Dashboard() {
                 date.getFullYear() === last.getFullYear();
         }
         if (filter === "last2months") {
-            const from = new Date(now.getFullYear(), now.getMonth() - 2, 1); // ✅ use Date constructor, not setMonth
+            const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
             return date >= from && date <= now;
         }
         if (filter === "last3months") {
@@ -64,10 +63,7 @@ export default function Dashboard() {
             const from = new Date(now.getFullYear(), now.getMonth() - 6, 1);
             return date >= from && date <= now;
         }
-        if (filter === "thisYear") {
-            return date.getFullYear() === now.getFullYear();
-        }
-
+        if (filter === "thisYear") return date.getFullYear() === now.getFullYear();
         return true;
     });
 
@@ -75,15 +71,8 @@ export default function Dashboard() {
     const newLeads = filteredLeads.filter((l) => l.isNew === true).length;
     const interested = filteredLeads.filter((l) => l.status === "Interested").length;
     const converted = filteredLeads.filter((l) => l.status === "Closed Won").length;
-
-    const revenue = filteredLeads.reduce(
-        (sum, l) => sum + (Number(l.advancePaid) || 0),
-        0
-    );
-
-    const pendingFollowUps = filteredLeads.filter(
-        (l) => l.status !== "Closed Won"
-    ).length;
+    const revenue = filteredLeads.reduce((sum, l) => sum + (Number(l.advancePaid) || 0), 0);
+    const pendingFollowUps = filteredLeads.filter((l) => l.status !== "Closed Won").length;
 
     const stats = [
         { title: "Total Leads", value: totalLeads, icon: "👤", color: "bg-blue-100 text-blue-500" },
@@ -103,7 +92,7 @@ export default function Dashboard() {
 
     const overdue = filteredLeads.filter((l) => {
         if (!l.followUpDate) return false;
-        if (l.status === "Closed Won" || l.status === "Closed Lost") return false; // ✅ exclude closed
+        if (l.status === "Closed Won" || l.status === "Closed Lost") return false;
         return l.followUpDate.split("T")[0] < today;
     });
 
@@ -115,16 +104,11 @@ export default function Dashboard() {
     ];
 
     const dateMap = {};
-
     filteredLeads.forEach((lead) => {
         const date = lead.createdAt
             ? new Date(lead.createdAt).toLocaleDateString()
             : "No Date";
-
-        if (!dateMap[date]) {
-            dateMap[date] = 0;
-        }
-
+        if (!dateMap[date]) dateMap[date] = 0;
         dateMap[date]++;
     });
 
@@ -134,23 +118,20 @@ export default function Dashboard() {
     }));
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
 
-
-            <div className="flex justify-between items-center mb-6">
-
+            {/* ✅ Fixed header — stacks on mobile */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                    <p className="text-gray-500 text-sm">
-                        Overview of your sales pipeline
-                    </p>
+                    <p className="text-gray-500 text-sm">Overview of your sales pipeline</p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                     <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="border px-4 py-2 rounded-lg bg-white shadow-sm"
+                        className="border px-3 py-2 rounded-lg bg-white shadow-sm text-sm flex-1 md:flex-none"
                     >
                         <option value="all">All Time</option>
                         <option value="today">Today</option>
@@ -165,97 +146,88 @@ export default function Dashboard() {
 
                     <button
                         onClick={() => navigate("/add-lead")}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap"
                     >
                         + Add New Lead
                     </button>
                 </div>
             </div>
 
-
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-5">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-5">
                 {stats.map((item, index) => (
                     <div
                         key={index}
-                        className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between"
+                        className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between"
                     >
                         <div>
-                            <p className="text-gray-500 text-sm">{item.title}</p>
-                            <h2 className="text-2xl font-bold text-gray-900">
+                            <p className="text-gray-500 text-xs md:text-sm">{item.title}</p>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                                 {item.value}
                             </h2>
                         </div>
-
-                        <div className={`w-10 h-10 flex items-center justify-center rounded-full ${item.color}`}>
+                        <div className={`w-9 h-9 flex items-center justify-center rounded-full ${item.color}`}>
                             {item.icon}
                         </div>
                     </div>
                 ))}
             </div>
 
-
+            {/* ✅ Fixed Charts — ResponsiveContainer */}
             <div className="grid md:grid-cols-2 gap-5 mt-8">
 
                 <div className="bg-white rounded-xl shadow-sm p-5">
-                    <h3 className="text-gray-700 font-semibold mb-4">
-                        Leads by Status
-                    </h3>
-
-                    <BarChart width={400} height={250} data={statusData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#f97316" />
-                    </BarChart>
+                    <h3 className="text-gray-700 font-semibold mb-4">Leads by Status</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={statusData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#f97316" />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-5">
-                    <h3 className="text-gray-700 font-semibold mb-4">
-                        Leads Over Time
-                    </h3>
-
-                    <LineChart width={400} height={250} data={timeData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="leads" stroke="#f97316" />
-                    </LineChart>
+                    <h3 className="text-gray-700 font-semibold mb-4">Leads Over Time</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <LineChart data={timeData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="leads" stroke="#f97316" />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </div>
 
             </div>
 
+            {/* Key Insights */}
             <div className="bg-white p-5 rounded-xl shadow mt-6">
                 <h3 className="font-semibold mb-4">📌 Key Insights</h3>
-
                 <div className="grid grid-cols-2 gap-4">
-
-
                     <div className="bg-red-50 border border-red-100 rounded-lg p-4">
-                        <strong className="text-red-500">❌ Common Rejection</strong>
+                        <strong className="text-red-500 text-sm">❌ Common Rejection</strong>
                         <p className="text-sm text-gray-600 mt-1">
                             {leads.find(l => l.rejectionReason)?.rejectionReason || "No data"}
                         </p>
                     </div>
-
-
                     <div className="bg-green-50 border border-green-100 rounded-lg p-4">
-                        <strong className="text-green-500">✅ Common Acceptance</strong>
+                        <strong className="text-green-500 text-sm">✅ Common Acceptance</strong>
                         <p className="text-sm text-gray-600 mt-1">
                             {leads.find(l => l.acceptanceReason)?.acceptanceReason || "No data"}
                         </p>
                     </div>
-
                 </div>
             </div>
+
+            {/* Follow-ups */}
             <div className="grid md:grid-cols-2 gap-5 mt-8">
 
                 <div className="bg-white rounded-xl shadow-sm p-5">
-                    <h3 className="font-semibold text-gray-700 mb-4">
-                        Today's Follow-ups
-                    </h3>
-
+                    <h3 className="font-semibold text-gray-700 mb-4">Today's Follow-ups</h3>
                     {todayFollowUps.length === 0 ? (
                         <p className="text-gray-400">No follow-ups today</p>
                     ) : (
@@ -268,7 +240,6 @@ export default function Dashboard() {
                                     <p className="font-medium">{lead.name}</p>
                                     <p className="text-sm text-gray-500">{lead.phone}</p>
                                 </div>
-
                                 <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm">
                                     {lead.status}
                                 </span>
@@ -281,7 +252,6 @@ export default function Dashboard() {
                     <h3 className="text-red-600 font-semibold mb-4">
                         ⚠️ Urgent — Overdue ({overdue.length})
                     </h3>
-
                     {overdue.length === 0 ? (
                         <p className="text-gray-400">No overdue leads</p>
                     ) : (
@@ -296,7 +266,6 @@ export default function Dashboard() {
                                         Due {new Date(lead.followUpDate).toDateString()}
                                     </p>
                                 </div>
-
                                 <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm">
                                     {lead.status}
                                 </span>
@@ -306,7 +275,6 @@ export default function Dashboard() {
                 </div>
 
             </div>
-
         </div>
     );
 }
