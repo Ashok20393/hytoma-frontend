@@ -48,3 +48,35 @@ export const deleteLead = async (id) => {
     credentials: "include"
   });
 };
+
+export const getInventory = async () => {
+  const res = await fetch(`${API}/inventory`, { credentials: "include" });
+  return res.json();
+};
+
+export const addProduct = async (data) => {
+  const res = await fetch(`${API}/inventory`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const updateProduct = async (id, data) => {
+  const res = await fetch(`${API}/inventory/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const deleteProduct = async (id) => {
+  await fetch(`${API}/inventory/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+};

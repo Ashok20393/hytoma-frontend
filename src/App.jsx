@@ -8,6 +8,8 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import Login from "./pages/Login";
+import Inventory from "./pages/Inventory";
+import SalesReport from "./pages/SalesReport";
 
 function App() {
   return (
@@ -17,9 +19,9 @@ function App() {
         {/* LOGIN ROUTE */}
         <Route path="/login" element={
           <PublicRoute>
-          <Login />
-        </PublicRoute>
-          } />
+            <Login />
+          </PublicRoute>
+        } />
 
         {/* PROTECTED ROUTES */}
         <Route
@@ -76,6 +78,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/inventory" element={
+          <ProtectedRoute>
+            <Layout>
+              <Inventory />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/sales-report" element={
+          <ProtectedRoute>
+            <Layout>
+              <SalesReport />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
       </Routes>
     </BrowserRouter>

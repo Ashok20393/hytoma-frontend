@@ -11,6 +11,8 @@ export default function EditLead() {
     name: "",
     phone: "",
     status: "",
+    leadType: "",
+    leadSource: "",
     salesPerson: "",
     totalAmount: "",
     advancePaid: "",
@@ -95,11 +97,10 @@ export default function EditLead() {
                     setForm({ ...form, phone: val });
                   }
                 }}
-                className={`border px-3 py-2 rounded-lg w-full ${
-                  form.phone && form.phone.length !== 10
-                    ? "border-red-400"
-                    : ""
-                }`}
+                className={`border px-3 py-2 rounded-lg w-full ${form.phone && form.phone.length !== 10
+                  ? "border-red-400"
+                  : ""
+                  }`}
               />
               {form.phone && form.phone.length !== 10 && (
                 <p className="text-red-500 text-xs mt-1">
@@ -124,6 +125,33 @@ export default function EditLead() {
             <option value="Quotation Sent">Quotation Sent</option>
             <option value="Closed Won">Closed Won</option>
             <option value="Closed Lost">Closed Lost</option>
+          </select>
+
+          {/* Lead Type */}
+          <select
+            value={form.leadType}
+            onChange={(e) => setForm({ ...form, leadType: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          >
+            <option value="" disabled>Select Lead Type</option>
+            <option value="B2C">B2C — Individual Customer</option>
+            <option value="B2B">B2B — Business / Interior</option>
+          </select>
+
+          {/* Lead Source */}
+          <select
+            value={form.leadSource}
+            onChange={(e) => setForm({ ...form, leadSource: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          >
+            <option value="" disabled>Select Lead Source</option>
+            <option value="Social Media">Social Media</option>
+            <option value="Referral">Referral</option>
+            <option value="Phone Call">Phone Call</option>
+            <option value="Walk-in">Walk-in</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Ads">Ads</option>
+            <option value="Other">Other</option>
           </select>
 
           {/* Sales Person */}
