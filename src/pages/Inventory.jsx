@@ -221,7 +221,7 @@ export default function Inventory() {
                     >
                       Edit
                     </button>
-                    {role === "admin" && (
+                    {(role === "admin" || role === "inventory_manager") && (
                       <button
                         onClick={() => setDeleteId(product._id)}
                         className="bg-red-500 text-white px-3 py-1 rounded text-sm"
@@ -281,7 +281,7 @@ export default function Inventory() {
                 >
                   Edit
                 </button>
-                {role === "admin" && (
+                {(role === "admin" || role === "inventory_manager") && (
                   <button
                     onClick={() => setDeleteId(product._id)}
                     className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
