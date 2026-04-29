@@ -87,11 +87,11 @@ export default function SalesReport() {
         }).length,
     }));
 
-    const salesPersons = [...new Set(leads.map((l) => l.salesPerson).filter(Boolean))];
+    const salesPersons = [...new Set(leads.map((l) =>  l.salesPerson?.toLowerCase()).filter(Boolean))];
     const salesPersonData = salesPersons.map((person) => {
-        const personLeads = typeFiltered.filter((l) => l.salesPerson === person);
+        const personLeads = typeFiltered.filter((l) =>  l.salesPerson?.toLowerCase() === person);
         return {
-            name: person,
+            name: person.charAt(0).toUpperCase() + person.slice(1),
             b2b: personLeads.filter((l) => l.leadType === "B2B").length,
             b2c: personLeads.filter((l) => l.leadType === "B2C").length,
             total: personLeads.length,

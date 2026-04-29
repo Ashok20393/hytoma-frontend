@@ -10,6 +10,7 @@ import PublicRoute from "./components/PublicRoute";
 import Login from "./pages/Login";
 import Inventory from "./pages/Inventory";
 import SalesReport from "./pages/SalesReport";
+import Complaints from "./pages/Complaints";
 
 function App() {
   return (
@@ -91,6 +92,14 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <SalesReport />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/complaints" element={
+          <ProtectedRoute>
+            <Layout>
+              <Complaints />
             </Layout>
           </ProtectedRoute>
         } />

@@ -32,6 +32,7 @@ export default function Layout({ children }) {
           <NavItem to="/sales" label="Sales Performance" onClick={() => setMenuOpen(false)} />
           <NavItem to="/inventory" label="Inventory" onClick={() => setMenuOpen(false)} />
           <NavItem to="/sales-report" label="Sales Report" onClick={() => setMenuOpen(false)} />
+          <NavItem to="/complaints" label="Complaints" onClick={() => setMenuOpen(false)} />
         </nav>
 
         <button

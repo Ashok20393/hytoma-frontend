@@ -80,3 +80,53 @@ export const deleteProduct = async (id) => {
     credentials: "include",
   });
 };
+
+// COMPLAINTS
+export const getComplaints = async () => {
+  const res = await fetch(`${API}/complaints`, { credentials: "include" });
+  return res.json();
+};
+export const addComplaint = async (data) => {
+  const res = await fetch(`${API}/complaints`, {
+    method: "POST", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+export const updateComplaint = async (id, data) => {
+  const res = await fetch(`${API}/complaints/${id}`, {
+    method: "PUT", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+export const deleteComplaint = async (id) => {
+  await fetch(`${API}/complaints/${id}`, { method: "DELETE", credentials: "include" });
+};
+
+// SOCIAL ENQUIRIES
+export const getSocialEnquiries = async () => {
+  const res = await fetch(`${API}/social-enquiries`, { credentials: "include" });
+  return res.json();
+};
+export const addSocialEnquiry = async (data) => {
+  const res = await fetch(`${API}/social-enquiries`, {
+    method: "POST", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+export const updateSocialEnquiry = async (id, data) => {
+  const res = await fetch(`${API}/social-enquiries/${id}`, {
+    method: "PUT", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+export const deleteSocialEnquiry = async (id) => {
+  await fetch(`${API}/social-enquiries/${id}`, { method: "DELETE", credentials: "include" });
+};
