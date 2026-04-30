@@ -454,7 +454,7 @@ export default function ProductMovement() {
             </div>
 
             {/* ✅ Desktop Table */}
-            <div className="hidden md:block" style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
               {loading ? (
                 <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
               ) : entries.length === 0 ? (
@@ -493,37 +493,6 @@ export default function ProductMovement() {
                     </tbody>
                   </table>
                 </div>
-              )}
-            </div>
-
-            {/* ✅ Mobile Cards */}
-            <div className="md:hidden" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {loading ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
-              ) : entries.length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
-              ) : (
-                entries.map((e) => (
-                  <div key={e.id} style={{ background: "#fff", borderRadius: 12, padding: 16, border: "1px solid #f0f0f0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                      <div>
-                        <p style={{ fontWeight: 700, color: "#111", margin: 0 }}>{e.product}</p>
-                        <p style={{ fontSize: 12, color: "#888", margin: "2px 0 0" }}>Qty: {e.quantity || 1}</p>
-                      </div>
-                      <Badge value={e.status} />
-                    </div>
-                    <div style={{ fontSize: 13, color: "#555", display: "flex", flexDirection: "column", gap: 4 }}>
-                      <p style={{ margin: 0 }}><b>Client:</b> {e.client}</p>
-                      <p style={{ margin: 0 }}><b>Person:</b> {e.person}</p>
-                      <p style={{ margin: 0 }}><b>Type:</b> <Badge value={e.type} /></p>
-                      <p style={{ margin: 0 }}><b>Out:</b> {e.out_time || "—"} &nbsp; <b>Return:</b> {e.return_time || "—"}</p>
-                      {e.notes && <p style={{ margin: 0, color: "#aaa", fontSize: 12 }}>{e.notes}</p>}
-                    </div>
-                    <div style={{ marginTop: 12 }}>
-                      <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
-                    </div>
-                  </div>
-                ))
               )}
             </div>
           </div>
