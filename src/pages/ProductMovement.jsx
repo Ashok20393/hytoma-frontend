@@ -454,7 +454,7 @@ export default function ProductMovement() {
             </div>
 
             {/* ✅ Desktop Table */}
-            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "visibe" }}>
               {loading ? (
                 <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
               ) : entries.length === 0 ? (
