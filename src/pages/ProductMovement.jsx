@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 
 const API = `${import.meta.env.VITE_API_URL}/api/movements`;
 
+
+
 const todayStr = () => new Date().toISOString().split("T")[0];
 const nowTime = () => new Date().toTimeString().slice(0, 5);
 const fmtDisplay = (ds) => { const [y, m, d] = ds.split("-"); return `${d}/${m}/${y}`; };
@@ -10,7 +12,7 @@ const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const makeDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-const [pos, setPos] = useState({ top: 0, left: 0 });
+
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 const Badge = ({ value }) => {
@@ -34,6 +36,7 @@ const Badge = ({ value }) => {
 // ─── Action Dropdown ──────────────────────────────────────────────────────────
 const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   return (
     <div style={{ position: "relative" }}>
       <button
