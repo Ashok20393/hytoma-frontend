@@ -49,7 +49,7 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
           <div style={{
-            position: "absolute", right: 0, top: 38, zIndex: 200,
+            position: "fixed", right: 20, top: 120, zIndex: 9999,
             background: "#fff", border: "1px solid #e5e7eb",
             borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
             minWidth: 170, overflow: "hidden",
@@ -460,7 +460,7 @@ export default function ProductMovement() {
               ) : entries.length === 0 ? (
                 <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
               ) : (
-                <div style={{ overflowX: "auto" }}>
+                <div style={{ overflowX: "auto", overflowY: "visible"  }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#fafafa" }}>
