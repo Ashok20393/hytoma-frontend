@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API = "/api/movements";
+const API =  `${import.meta.env.VITE_API_URL}/api/movements`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -43,7 +43,7 @@ const Badge = ({ value }) => {
 };
 
 // ─── Log Modal ────────────────────────────────────────────────────────────────
-const PERSONS = ["Revathi", "Suresh", "Manoj", "Naveen"];
+const PERSONS = ["Revathi", "Suresh", "Manoj", "Naveen", "Venkatesh"];
 
 const Modal = ({ open, onClose, onSave, selectedDate, dbPersons }) => {
   const allPersons = [...new Set([...PERSONS, ...dbPersons])];
