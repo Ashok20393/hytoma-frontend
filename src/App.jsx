@@ -12,7 +12,7 @@ import Inventory from "./pages/Inventory";
 import SalesReport from "./pages/SalesReport";
 import Complaints from "./pages/Complaints";
 import ComplaintForm from "./pages/ComplaintForm";
-
+import ProductMovement from "./pages/ProductMovement";
 
 
 function App() {
@@ -107,7 +107,21 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/submit-complaint" element={<ComplaintForm />} />
+        <Route path="/submit-complaint" element={
+          <ProtectedRoute>
+            <Layout>
+              <ComplaintForm />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/productmovement" element={
+          <ProtectedRoute>
+            <Layout>
+              <ProductMovement />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
       </Routes>
     </BrowserRouter>
