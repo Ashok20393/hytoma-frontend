@@ -1,27 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API =  `${import.meta.env.VITE_API_URL}/api/movements`;
+const API = `${import.meta.env.VITE_API_URL}/api/movements`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const todayStr = () => new Date().toISOString().split("T")[0];
 const nowTime  = () => new Date().toTimeString().slice(0, 5);
-
-const toDateObj = (ds) => {
-  const [y, m, d] = ds.split("-").map(Number);
-  return new Date(y, m - 1, d);
-};
-const fmtDisplay = (ds) => {
-  const [y, m, d] = ds.split("-");
-  return `${d}/${m}/${y}`;
-};
-const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay(); // 0=Sun
-const MONTH_NAMES = ["January","February","March","April","May","June",
-                     "July","August","September","October","November","December"];
-const DAY_LABELS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-const makeDateStr = (y, m, d) =>
-  `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const fmtDisplay = (ds) => { const [y, m, d] = ds.split("-"); return `${d}/${m}/${y}`; };
+const getDaysInMonth   = (year, month) => new Date(year, month + 1, 0).getDate();
+const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAY_LABELS  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const makeDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 const Badge = ({ value }) => {
@@ -39,6 +28,66 @@ const Badge = ({ value }) => {
       background: s.bg, color: s.color, fontSize: 11, fontWeight: 600,
       padding: "3px 9px", borderRadius: 20, display: "inline-block",
     }}>{value}</span>
+  );
+};
+
+// ─── Action Dropdown ──────────────────────────────────────────────────────────
+const ActionDropdown = ({ entry, onMark, onDelete }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          height: 32, padding: "0 14px", background: "#f97316",
+          color: "#fff", border: "none", borderRadius: 8,
+          fontSize: 12, fontWeight: 600, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 5,
+        }}
+      >
+        Actions ▾
+      </button>
+
+      {open && (
+        <>
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 100 }}
+          />
+          <div style={{
+            position: "absolute", right: 0, top: 38, zIndex: 200,
+            background: "#fff", border: "1px solid #e5e7eb",
+            borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            minWidth: 170, overflow: "hidden",
+          }}>
+            {entry.status === "Out" && (
+              <>
+                <button
+                  onClick={() => { onMark(entry.id, "Returned"); setOpen(false); }}
+                  style={dropItemSt("#16a34a")}
+                >
+                  ✅ Mark Returned
+                </button>
+                <button
+                  onClick={() => { onMark(entry.id, "Installed"); setOpen(false); }}
+                  style={dropItemSt("#2563eb")}
+                >
+                  🔧 Mark Installed
+                </button>
+                <div style={{ height: 1, background: "#f0f0f0" }} />
+              </>
+            )}
+            <button
+              onClick={() => { onDelete(entry.id); setOpen(false); }}
+              style={dropItemSt("#dc2626")}
+            >
+              🗑️ Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
@@ -81,30 +130,26 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons }) => {
           Log product out
         </h3>
 
-        {/* Product */}
         <div style={fieldWrap}>
-          <label style={labelSt}>Product name</label>
+          <label style={labelSt}>Product name *</label>
           <input value={form.product} onChange={e => set("product", e.target.value)}
             placeholder="e.g. Handle With Finger Print" style={inputSt} />
         </div>
 
-        {/* Client */}
         <div style={fieldWrap}>
-          <label style={labelSt}>Client name</label>
+          <label style={labelSt}>Client name *</label>
           <input value={form.client} onChange={e => set("client", e.target.value)}
             placeholder="e.g. Kurapati Ashok" style={inputSt} />
         </div>
 
-        {/* Person — dropdown with your team */}
         <div style={fieldWrap}>
-          <label style={labelSt}>Sales person / technician</label>
+          <label style={labelSt}>Sales person / technician *</label>
           <select value={form.person} onChange={e => set("person", e.target.value)} style={inputSt}>
             <option value="">Select person</option>
             {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
 
-        {/* Type */}
         <div style={fieldWrap}>
           <label style={labelSt}>Movement type</label>
           <select value={form.type} onChange={e => set("type", e.target.value)} style={inputSt}>
@@ -114,7 +159,6 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons }) => {
           </select>
         </div>
 
-        {/* Date + Time */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
           <div>
             <label style={labelSt}>Date</label>
@@ -126,7 +170,6 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons }) => {
           </div>
         </div>
 
-        {/* Notes */}
         <div style={fieldWrap}>
           <label style={labelSt}>Notes (optional)</label>
           <textarea value={form.notes} onChange={e => set("notes", e.target.value)}
@@ -146,32 +189,30 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons }) => {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProductMovement() {
   const now = new Date();
-  const [viewYear,  setViewYear]  = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth()); // 0-indexed
+  const [viewYear,    setViewYear]    = useState(now.getFullYear());
+  const [viewMonth,   setViewMonth]   = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState(todayStr());
-  const [entries,  setEntries]  = useState([]);
-  const [stats,    setStats]    = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0 });
-  const [calDots,  setCalDots]  = useState({});   // { "2026-04-28": true }
-  const [filters,  setFilters]  = useState({ status: "", person: "", type: "" });
-  const [dbPersons, setDbPersons] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const [entries,     setEntries]     = useState([]);
+  const [stats,       setStats]       = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0 });
+  const [calDots,     setCalDots]     = useState({});
+  const [filters,     setFilters]     = useState({ status: "", person: "", type: "" });
+  const [dbPersons,   setDbPersons]   = useState([]);
+  const [modalOpen,   setModalOpen]   = useState(false);
+  const [loading,     setLoading]     = useState(false);
 
-  // ── When month changes, fetch dot data for the whole month
   const fetchMonthDots = useCallback(async () => {
     const from = makeDateStr(viewYear, viewMonth, 1);
     const days = getDaysInMonth(viewYear, viewMonth);
     const to   = makeDateStr(viewYear, viewMonth, days);
     try {
-      const res  = await fetch(`${API}?from_date=${from}&to_date=${to}`);
+      const res  = await fetch(`${API}?from_date=${from}&to_date=${to}`, { credentials: "include" });
       const data = await res.json();
       const dots = {};
-      data.forEach(e => { dots[e.date] = true; });
+      (Array.isArray(data) ? data : []).forEach(e => { dots[e.date] = true; });
       setCalDots(dots);
     } catch (e) { console.error(e); }
   }, [viewYear, viewMonth]);
 
-  // ── Fetch entries for selected date
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     try {
@@ -179,33 +220,33 @@ export default function ProductMovement() {
       if (filters.status) params.append("status", filters.status);
       if (filters.person) params.append("person", filters.person);
       if (filters.type)   params.append("type",   filters.type);
-      const res = await fetch(`${API}?${params}`);
-      setEntries(await res.json());
+      const res = await fetch(`${API}?${params}`, { credentials: "include" });
+      const data = await res.json();
+      setEntries(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
     setLoading(false);
   }, [selectedDate, filters]);
 
-  // ── Fetch stats for selected date
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/stats/summary?date=${selectedDate}`);
-      setStats(await res.json());
+      const res = await fetch(`${API}/stats/summary?date=${selectedDate}`, { credentials: "include" });
+      const data = await res.json();
+      setStats(data);
     } catch (e) { console.error(e); }
   }, [selectedDate]);
 
-  // ── Fetch persons from DB
   const fetchPersons = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/meta/persons`);
-      setDbPersons(await res.json());
+      const res = await fetch(`${API}/meta/persons`, { credentials: "include" });
+      const data = await res.json();
+      setDbPersons(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
   }, []);
 
   useEffect(() => { fetchMonthDots(); }, [fetchMonthDots]);
   useEffect(() => { fetchEntries(); fetchStats(); }, [fetchEntries, fetchStats]);
-  useEffect(() => { fetchPersons(); }, []);
+  useEffect(() => { fetchPersons(); }, [fetchPersons]);
 
-  // ── Month navigation
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
     else setViewMonth(m => m - 1);
@@ -215,250 +256,233 @@ export default function ProductMovement() {
     else setViewMonth(m => m + 1);
   };
 
-  // ── Click a calendar day
   const handleDayClick = (ds) => {
     setSelectedDate(ds);
-    // if clicked day is in a different month, navigate there
     const [y, m] = ds.split("-").map(Number);
     setViewYear(y);
     setViewMonth(m - 1);
   };
 
-  // ── Save new entry
   const handleSave = async (form) => {
     try {
       const res = await fetch(API, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed");
       setModalOpen(false);
       fetchEntries(); fetchStats(); fetchMonthDots(); fetchPersons();
-    } catch (e) { alert("Failed to save. Check console."); }
+    } catch (e) { alert("Failed to save."); }
   };
 
   const markStatus = async (id, status) => {
-    await fetch(`${API}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, return_time: nowTime() }),
-    });
-    fetchEntries(); fetchStats();
+    try {
+      await fetch(`${API}/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, return_time: nowTime() }),
+      });
+      fetchEntries(); fetchStats();
+    } catch (e) { alert("Failed to update status."); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this entry?")) return;
-    await fetch(`${API}/${id}`, { method: "DELETE" });
-    fetchEntries(); fetchStats(); fetchMonthDots();
+    try {
+      await fetch(`${API}/${id}`, { method: "DELETE", credentials: "include" });
+      fetchEntries(); fetchStats(); fetchMonthDots();
+    } catch (e) { alert("Failed to delete."); }
   };
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
-  // ── Build calendar grid
   const daysInMonth  = getDaysInMonth(viewYear, viewMonth);
   const firstWeekDay = getFirstDayOfMonth(viewYear, viewMonth);
   const calCells     = [];
-  for (let i = 0; i < firstWeekDay; i++) calCells.push(null); // empty prefix cells
+  for (let i = 0; i < firstWeekDay; i++) calCells.push(null);
   for (let d = 1; d <= daysInMonth; d++) calCells.push(makeDateStr(viewYear, viewMonth, d));
 
-  const todayFull = todayStr();
-
-  // All persons = hardcoded defaults merged with DB
+  const todayFull  = todayStr();
   const allPersons = [...new Set(["Revathi", "Suresh", "Manoj", "Naveen", ...dbPersons])];
 
   return (
-    // ── Wrapper: uses same layout as your other pages
-    // If you have a <Layout> component, replace this div with <Layout>
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f8f8f6" }}>
+    <div style={{ minHeight: "100vh", background: "#f8f8f6", padding: "1.75rem 2rem" }}>
 
-      {/* ── Main content area (same padding as your other pages) */}
-      <div style={{ flex: 1, padding: "1.75rem 2rem", overflowY: "auto" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", margin: 0 }}>Product Movement Log</h1>
+          <p style={{ fontSize: 13, color: "#888", marginTop: 3 }}>
+            Track products going out, returned, and installed at client sites
+          </p>
+        </div>
+        <button onClick={() => setModalOpen(true)} style={orangeBtn}>
+          + Log product out
+        </button>
+      </div>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", margin: 0 }}>Product Movement Log</h1>
-            <p style={{ fontSize: 13, color: "#888", marginTop: 3 }}>
-              Track products going out, returned, and installed at client sites
-            </p>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: "1.5rem" }}>
+        {[
+          { label: "Total out today", val: stats.Total,     color: "#111"    },
+          { label: "Not returned",    val: stats.Out,       color: "#dc2626" },
+          { label: "Returned",        val: stats.Returned,  color: "#16a34a" },
+          { label: "Installed",       val: stats.Installed, color: "#2563eb" },
+        ].map(({ label, val, color }) => (
+          <div key={label} style={{
+            background: "#fff", borderRadius: 10, padding: "14px 16px",
+            border: "1px solid #f0f0f0",
+          }}>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color }}>{val ?? 0}</div>
           </div>
-          <button onClick={() => setModalOpen(true)} style={orangeBtn}>
-            + Log product out
-          </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: "1.5rem" }}>
-          {[
-            { label: "Total out today", val: stats.Total,     color: "#111"    },
-            { label: "Not returned",    val: stats.Out,       color: "#dc2626" },
-            { label: "Returned",        val: stats.Returned,  color: "#16a34a" },
-            { label: "Installed",       val: stats.Installed, color: "#2563eb" },
-          ].map(({ label, val, color }) => (
-            <div key={label} style={{
-              background: "#fff", borderRadius: 10, padding: "14px 16px",
-              border: "1px solid #f0f0f0",
-            }}>
-              <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color }}>{val}</div>
-            </div>
-          ))}
-        </div>
+      {/* Two column layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
 
-        {/* ── Two-column layout: calendar left, table right */}
-        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
+        {/* Calendar */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #f0f0f0", padding: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <button onClick={prevMonth} style={navBtn}>‹</button>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+              {MONTH_NAMES[viewMonth]} {viewYear}
+            </span>
+            <button onClick={nextMonth} style={navBtn}>›</button>
+          </div>
 
-          {/* ── Calendar */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #f0f0f0", padding: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
+            {DAY_LABELS.map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#aaa", fontWeight: 600, padding: "2px 0" }}>
+                {d}
+              </div>
+            ))}
+          </div>
 
-            {/* Month nav */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <button onClick={prevMonth} style={navBtn}>‹</button>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
-                {MONTH_NAMES[viewMonth]} {viewYear}
-              </span>
-              <button onClick={nextMonth} style={navBtn}>›</button>
-            </div>
-
-            {/* Day labels */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
-              {DAY_LABELS.map(d => (
-                <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#aaa", fontWeight: 600, padding: "2px 0" }}>
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            {/* Day cells */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-              {calCells.map((ds, i) => {
-                if (!ds) return <div key={`empty-${i}`} />;
-                const isSelected = ds === selectedDate;
-                const isToday    = ds === todayFull;
-                const hasDot     = calDots[ds];
-                return (
-                  <div key={ds} onClick={() => handleDayClick(ds)} style={{
-                    borderRadius: 8, padding: "6px 2px", textAlign: "center",
-                    cursor: "pointer", position: "relative",
-                    background: isSelected ? "#f97316" : isToday ? "#fff7ed" : "transparent",
-                    border: isToday && !isSelected ? "1px solid #f97316" : "1px solid transparent",
-                    transition: "background 0.1s",
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+            {calCells.map((ds, i) => {
+              if (!ds) return <div key={`empty-${i}`} />;
+              const isSelected = ds === selectedDate;
+              const isToday    = ds === todayFull;
+              const hasDot     = calDots[ds];
+              return (
+                <div key={ds} onClick={() => handleDayClick(ds)} style={{
+                  borderRadius: 8, padding: "6px 2px", textAlign: "center",
+                  cursor: "pointer", position: "relative",
+                  background: isSelected ? "#f97316" : isToday ? "#fff7ed" : "transparent",
+                  border: isToday && !isSelected ? "1px solid #f97316" : "1px solid transparent",
+                }}>
+                  <div style={{
+                    fontSize: 12, fontWeight: isSelected || isToday ? 700 : 400,
+                    color: isSelected ? "#fff" : isToday ? "#f97316" : "#333",
                   }}>
-                    <div style={{
-                      fontSize: 12, fontWeight: isSelected || isToday ? 700 : 400,
-                      color: isSelected ? "#fff" : isToday ? "#f97316" : "#333",
-                    }}>
-                      {Number(ds.split("-")[2])}
-                    </div>
-                    {/* dot for days with data */}
-                    <div style={{
-                      width: 4, height: 4, borderRadius: "50%",
-                      background: hasDot ? (isSelected ? "#fff" : "#f97316") : "transparent",
-                      margin: "2px auto 0",
-                    }} />
+                    {Number(ds.split("-")[2])}
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5", display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {[
-                { color: "#f97316", label: "Selected" },
-                { color: "#f97316", label: "Has data", dot: true },
-              ].map(({ color, label, dot }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#888" }}>
-                  {dot
-                    ? <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
-                    : <div style={{ width: 12, height: 12, borderRadius: 3, background: color }} />
-                  }
-                  {label}
+                  <div style={{
+                    width: 4, height: 4, borderRadius: "50%",
+                    background: hasDot ? (isSelected ? "#fff" : "#f97316") : "transparent",
+                    margin: "2px auto 0",
+                  }} />
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* ── Right: filters + table */}
-          <div>
-            {/* Selected date label */}
-            <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#555" }}>
-              Showing: {fmtDisplay(selectedDate)}
-            </div>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5", display: "flex", gap: 12 }}>
+            {[
+              { color: "#f97316", label: "Selected", dot: false },
+              { color: "#f97316", label: "Has data",  dot: true  },
+            ].map(({ color, label, dot }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#888" }}>
+                {dot
+                  ? <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                  : <div style={{ width: 12, height: 12, borderRadius: 3, background: color }} />
+                }
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
 
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
-              <select value={filters.status} onChange={e => setFilter("status", e.target.value)} style={selectSt}>
-                <option value="">All status</option>
-                <option value="Out">Out</option>
-                <option value="Returned">Returned</option>
-                <option value="Installed">Installed</option>
-              </select>
-              <select value={filters.type} onChange={e => setFilter("type", e.target.value)} style={selectSt}>
-                <option value="">All types</option>
-                <option value="Demo">Demo</option>
-                <option value="Delivery">Delivery</option>
-                <option value="Installation">Installation</option>
-              </select>
-              <select value={filters.person} onChange={e => setFilter("person", e.target.value)} style={selectSt}>
-                <option value="">All persons</option>
-                {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+        {/* Right: filters + table */}
+        <div>
+          <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#555" }}>
+            Showing: {fmtDisplay(selectedDate)}
+          </div>
 
-            {/* Table */}
-            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
-              {loading ? (
-                <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa", fontSize: 14 }}>Loading...</div>
-              ) : entries.length === 0 ? (
-                <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb", fontSize: 14 }}>
-                  No movements for {fmtDisplay(selectedDate)}
-                </div>
-              ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: "#fafafa" }}>
-                        {["Product", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
-                          <th key={h} style={{
-                            textAlign: "left", padding: "10px 14px", fontSize: 11,
-                            color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0",
-                            whiteSpace: "nowrap",
-                          }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entries.map((e, i) => (
-                        <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                          <td style={tdSt}>
-                            <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
-                            {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
-                          </td>
-                          <td style={tdSt}>{e.client}</td>
-                          <td style={tdSt}>{e.person}</td>
-                          <td style={tdSt}><Badge value={e.type} /></td>
-                          <td style={{ ...tdSt, color: "#666" }}>{e.out_time || "—"}</td>
-                          <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
-                          <td style={tdSt}><Badge value={e.status} /></td>
-                          <td style={tdSt}>
-                            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                              {e.status === "Out" && (
-                                <>
-                                  <button onClick={() => markStatus(e.id, "Returned")}  style={actBtn("#16a34a")}>Returned</button>
-                                  <button onClick={() => markStatus(e.id, "Installed")} style={actBtn("#2563eb")}>Installed</button>
-                                </>
-                              )}
-                              <button onClick={() => handleDelete(e.id)} style={actBtn("#dc2626")}>Delete</button>
-                            </div>
-                          </td>
-                        </tr>
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
+            <select value={filters.status} onChange={e => setFilter("status", e.target.value)} style={selectSt}>
+              <option value="">All status</option>
+              <option value="Out">Out</option>
+              <option value="Returned">Returned</option>
+              <option value="Installed">Installed</option>
+            </select>
+            <select value={filters.type} onChange={e => setFilter("type", e.target.value)} style={selectSt}>
+              <option value="">All types</option>
+              <option value="Demo">Demo</option>
+              <option value="Delivery">Delivery</option>
+              <option value="Installation">Installation</option>
+            </select>
+            <select value={filters.person} onChange={e => setFilter("person", e.target.value)} style={selectSt}>
+              <option value="">All persons</option>
+              {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+
+          {/* Table */}
+          <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
+            {loading ? (
+              <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa", fontSize: 14 }}>Loading...</div>
+            ) : entries.length === 0 ? (
+              <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb", fontSize: 14 }}>
+                No movements for {fmtDisplay(selectedDate)}
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#fafafa" }}>
+                      {["Product", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
+                        <th key={h} style={{
+                          textAlign: "left", padding: "10px 14px", fontSize: 11,
+                          color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0",
+                          whiteSpace: "nowrap",
+                        }}>{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((e, i) => (
+                      <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                        <td style={tdSt}>
+                          <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
+                          {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
+                        </td>
+                        <td style={tdSt}>{e.client}</td>
+                        <td style={tdSt}>{e.person}</td>
+                        <td style={tdSt}><Badge value={e.type} /></td>
+                        <td style={{ ...tdSt, color: "#666" }}>{e.out_time || "—"}</td>
+                        <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
+                        <td style={tdSt}><Badge value={e.status} /></td>
+                        {/* ✅ Action Dropdown */}
+                        <td style={tdSt}>
+                          <ActionDropdown
+                            entry={e}
+                            onMark={markStatus}
+                            onDelete={handleDelete}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -481,6 +505,11 @@ const inputSt    = { width: "100%", height: 36, fontSize: 13, padding: "0 10px",
 const selectSt   = { height: 34, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#333", cursor: "pointer" };
 const orangeBtn  = { height: 36, padding: "0 18px", background: "#f97316", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" };
 const cancelBtn  = { height: 36, padding: "0 16px", background: "transparent", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#555" };
-const navBtn     = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555", display: "flex", alignItems: "center", justifyContent: "center" };
+const navBtn     = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555" };
 const tdSt       = { padding: "11px 14px", verticalAlign: "middle", color: "#444" };
-const actBtn     = (color) => ({ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 6, border: `1px solid ${color}30`, color, background: `${color}0f`, cursor: "pointer", whiteSpace: "nowrap" });
+const dropItemSt = (color) => ({
+  display: "block", width: "100%", textAlign: "left",
+  padding: "10px 16px", fontSize: 13, fontWeight: 500,
+  color, background: "transparent", border: "none",
+  cursor: "pointer",
+});
