@@ -3,22 +3,23 @@ import { useState, useEffect, useCallback } from "react";
 const API = `${import.meta.env.VITE_API_URL}/api/movements`;
 
 const todayStr = () => new Date().toISOString().split("T")[0];
-const nowTime  = () => new Date().toTimeString().slice(0, 5);
+const nowTime = () => new Date().toTimeString().slice(0, 5);
 const fmtDisplay = (ds) => { const [y, m, d] = ds.split("-"); return `${d}/${m}/${y}`; };
-const getDaysInMonth     = (year, month) => new Date(year, month + 1, 0).getDate();
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAY_LABELS  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const makeDateStr = (y, m, d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const makeDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const [pos, setPos] = useState({ top: 0, left: 0 });
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 const Badge = ({ value }) => {
   const map = {
-    Out:          { bg: "#fff3eb", color: "#c2410c" },
-    Returned:     { bg: "#ecfdf5", color: "#15803d" },
-    Installed:    { bg: "#eff6ff", color: "#1d4ed8" },
-    Demo:         { bg: "#f5f3ff", color: "#6d28d9" },
-    Delivery:     { bg: "#fefce8", color: "#854d0e" },
+    Out: { bg: "#fff3eb", color: "#c2410c" },
+    Returned: { bg: "#ecfdf5", color: "#15803d" },
+    Installed: { bg: "#eff6ff", color: "#1d4ed8" },
+    Demo: { bg: "#f5f3ff", color: "#6d28d9" },
+    Delivery: { bg: "#fefce8", color: "#854d0e" },
     Installation: { bg: "#eff6ff", color: "#1d4ed8" },
   };
   const s = map[value] || { bg: "#f3f4f6", color: "#374151" };
@@ -36,7 +37,14 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
   return (
     <div style={{ position: "relative" }}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setPos({
+            top: rect.bottom + 5,
+            left: rect.right - 170
+          });
+          setOpen(!open);
+        }}
         style={{
           height: 32, padding: "0 14px", background: "#f97316",
           color: "#fff", border: "none", borderRadius: 8,
@@ -49,10 +57,16 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
           <div style={{
-            position: "fixed", right: 20, top: 120, zIndex: 9999,
-            background: "#fff", border: "1px solid #e5e7eb",
-            borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-            minWidth: 170, overflow: "hidden",
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            minWidth: 170,
+            overflow: "hidden",
           }}>
             {/* ✅ Edit */}
             <button onClick={() => { onEdit(entry); setOpen(false); }} style={dropItemSt("#f97316")}>
@@ -96,14 +110,14 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
     if (open) {
       if (editEntry) {
         setForm({
-          product:  editEntry.product  || "",
-          client:   editEntry.client   || "",
-          person:   editEntry.person   || "",
-          type:     editEntry.type     || "Demo",
+          product: editEntry.product || "",
+          client: editEntry.client || "",
+          person: editEntry.person || "",
+          type: editEntry.type || "Demo",
           quantity: editEntry.quantity || 1,
-          date:     editEntry.date     || selectedDate,
+          date: editEntry.date || selectedDate,
           out_time: editEntry.out_time || nowTime(),
-          notes:    editEntry.notes    || "",
+          notes: editEntry.notes || "",
         });
       } else {
         setForm(emptyForm(selectedDate));
@@ -208,23 +222,23 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProductMovement() {
   const now = new Date();
-  const [viewYear,     setViewYear]     = useState(now.getFullYear());
-  const [viewMonth,    setViewMonth]    = useState(now.getMonth());
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState(todayStr());
-  const [entries,      setEntries]      = useState([]);
-  const [stats,        setStats]        = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0 });
-  const [calDots,      setCalDots]      = useState({});
-  const [filters,      setFilters]      = useState({ status: "", person: "", type: "" });
-  const [dbPersons,    setDbPersons]    = useState([]);
-  const [modalOpen,    setModalOpen]    = useState(false);
-  const [editEntry,    setEditEntry]    = useState(null);
-  const [loading,      setLoading]      = useState(false);
+  const [entries, setEntries] = useState([]);
+  const [stats, setStats] = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0 });
+  const [calDots, setCalDots] = useState({});
+  const [filters, setFilters] = useState({ status: "", person: "", type: "" });
+  const [dbPersons, setDbPersons] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchMonthDots = useCallback(async () => {
     const from = makeDateStr(viewYear, viewMonth, 1);
-    const to   = makeDateStr(viewYear, viewMonth, getDaysInMonth(viewYear, viewMonth));
+    const to = makeDateStr(viewYear, viewMonth, getDaysInMonth(viewYear, viewMonth));
     try {
-      const res  = await fetch(`${API}?from_date=${from}&to_date=${to}`, { credentials: "include" });
+      const res = await fetch(`${API}?from_date=${from}&to_date=${to}`, { credentials: "include" });
       const data = await res.json();
       const dots = {};
       (Array.isArray(data) ? data : []).forEach(e => { dots[e.date] = true; });
@@ -238,8 +252,8 @@ export default function ProductMovement() {
       const params = new URLSearchParams({ date: selectedDate });
       if (filters.status) params.append("status", filters.status);
       if (filters.person) params.append("person", filters.person);
-      if (filters.type)   params.append("type",   filters.type);
-      const res  = await fetch(`${API}?${params}`, { credentials: "include" });
+      if (filters.type) params.append("type", filters.type);
+      const res = await fetch(`${API}?${params}`, { credentials: "include" });
       const data = await res.json();
       setEntries(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -248,7 +262,7 @@ export default function ProductMovement() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res  = await fetch(`${API}/stats/summary?date=${selectedDate}`, { credentials: "include" });
+      const res = await fetch(`${API}/stats/summary?date=${selectedDate}`, { credentials: "include" });
       const data = await res.json();
       setStats(data);
     } catch (e) { console.error(e); }
@@ -256,7 +270,7 @@ export default function ProductMovement() {
 
   const fetchPersons = useCallback(async () => {
     try {
-      const res  = await fetch(`${API}/meta/persons`, { credentials: "include" });
+      const res = await fetch(`${API}/meta/persons`, { credentials: "include" });
       const data = await res.json();
       setDbPersons(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -336,13 +350,13 @@ export default function ProductMovement() {
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
-  const daysInMonth  = getDaysInMonth(viewYear, viewMonth);
+  const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstWeekDay = getFirstDayOfMonth(viewYear, viewMonth);
-  const calCells     = [];
+  const calCells = [];
   for (let i = 0; i < firstWeekDay; i++) calCells.push(null);
   for (let d = 1; d <= daysInMonth; d++) calCells.push(makeDateStr(viewYear, viewMonth, d));
 
-  const todayFull  = todayStr();
+  const todayFull = todayStr();
   const allPersons = [...new Set(["Revathi", "Suresh", "Manoj", "Naveen", ...dbPersons])];
 
   return (
@@ -361,12 +375,12 @@ export default function ProductMovement() {
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: "1.5rem" }}
-           className="md:grid-cols-4">
+        className="md:grid-cols-4">
         {[
-          { label: "Total out today", val: stats.Total,     color: "#111"    },
-          { label: "Not returned",    val: stats.Out,       color: "#dc2626" },
-          { label: "Returned",        val: stats.Returned,  color: "#16a34a" },
-          { label: "Installed",       val: stats.Installed, color: "#2563eb" },
+          { label: "Total out today", val: stats.Total, color: "#111" },
+          { label: "Not returned", val: stats.Out, color: "#dc2626" },
+          { label: "Returned", val: stats.Returned, color: "#16a34a" },
+          { label: "Installed", val: stats.Installed, color: "#2563eb" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #f0f0f0" }}>
             <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{label}</div>
@@ -400,8 +414,8 @@ export default function ProductMovement() {
               {calCells.map((ds, i) => {
                 if (!ds) return <div key={`empty-${i}`} />;
                 const isSelected = ds === selectedDate;
-                const isToday    = ds === todayFull;
-                const hasDot     = calDots[ds];
+                const isToday = ds === todayFull;
+                const hasDot = calDots[ds];
                 return (
                   <div key={ds} onClick={() => handleDayClick(ds)} style={{
                     borderRadius: 8, padding: "6px 2px", textAlign: "center", cursor: "pointer",
@@ -460,7 +474,7 @@ export default function ProductMovement() {
               ) : entries.length === 0 ? (
                 <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
               ) : (
-                <div style={{ overflowX: "auto", overflowY: "visible"  }}>
+                <div style={{ overflowX: "auto", overflowY: "visible" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#fafafa" }}>
@@ -512,12 +526,12 @@ export default function ProductMovement() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const fieldWrap  = { marginBottom: 12 };
-const labelSt    = { display: "block", fontSize: 12, color: "#666", marginBottom: 4, fontWeight: 500 };
-const inputSt    = { width: "100%", height: 36, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", color: "#111", outline: "none" };
-const selectSt   = { height: 34, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#333", cursor: "pointer" };
-const orangeBtn  = { height: 36, padding: "0 18px", background: "#f97316", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" };
-const cancelBtn  = { height: 36, padding: "0 16px", background: "transparent", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#555" };
-const navBtn     = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555" };
-const tdSt       = { padding: "11px 14px", verticalAlign: "middle", color: "#444" };
+const fieldWrap = { marginBottom: 12 };
+const labelSt = { display: "block", fontSize: 12, color: "#666", marginBottom: 4, fontWeight: 500 };
+const inputSt = { width: "100%", height: 36, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", color: "#111", outline: "none" };
+const selectSt = { height: 34, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#333", cursor: "pointer" };
+const orangeBtn = { height: 36, padding: "0 18px", background: "#f97316", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const cancelBtn = { height: 36, padding: "0 16px", background: "transparent", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#555" };
+const navBtn = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555" };
+const tdSt = { padding: "11px 14px", verticalAlign: "middle", color: "#444" };
 const dropItemSt = (color) => ({ display: "block", width: "100%", textAlign: "left", padding: "10px 16px", fontSize: 13, fontWeight: 500, color, background: "transparent", border: "none", cursor: "pointer" });
