@@ -396,7 +396,7 @@ export default function ProductMovement() {
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
         {/* Calendar — full width on mobile, 300px on desktop */}
-  
+
 
         <div style={{
           display: "flex",
@@ -484,8 +484,11 @@ export default function ProductMovement() {
               ) : entries.length === 0 ? (
                 <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
               ) : (
-                <div style={{ overflowX: "auto", overflowY: "visible" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <div style={{
+                  overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "thin"
+                }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13,whiteSpace: "nowrap" }}>
                     <thead>
                       <tr style={{ background: "#fafafa" }}>
                         {["Product", "Qty", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
