@@ -11,6 +11,9 @@ import Login from "./pages/Login";
 import Inventory from "./pages/Inventory";
 import SalesReport from "./pages/SalesReport";
 import Complaints from "./pages/Complaints";
+import ComplaintForm from "./pages/ComplaintForm";
+
+
 
 function App() {
   return (
@@ -103,6 +106,8 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
+
+        <Route path="/submit-complaint" element={<ComplaintForm />} />
 
       </Routes>
     </BrowserRouter>
