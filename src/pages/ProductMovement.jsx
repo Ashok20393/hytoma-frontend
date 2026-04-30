@@ -396,7 +396,14 @@ export default function ProductMovement() {
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
         {/* Calendar — full width on mobile, 300px on desktop */}
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
+  
+
+        <div style={{
+          display: "flex",
+          flexDirection: window.innerWidth < 768 ? "column" : "row",
+          gap: 20,
+          alignItems: "flex-start"
+        }}>
 
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #f0f0f0", padding: "1rem", minWidth: 280, flex: "0 0 auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
