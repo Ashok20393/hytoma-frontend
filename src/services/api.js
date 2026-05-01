@@ -130,3 +130,10 @@ export const updateSocialEnquiry = async (id, data) => {
 export const deleteSocialEnquiry = async (id) => {
   await fetch(`${API}/social-enquiries/${id}`, { method: "DELETE", credentials: "include" });
 };
+
+export const getPendingMovements = async () => {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/movements/pending`, {
+    credentials: "include"
+  });
+  return res.json();
+};

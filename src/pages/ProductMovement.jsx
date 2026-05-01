@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 
 const API = `${import.meta.env.VITE_API_URL}/api/movements`;
 
-
-
 const todayStr = () => new Date().toISOString().split("T")[0];
 const nowTime = () => new Date().toTimeString().slice(0, 5);
 const fmtDisplay = (ds) => { const [y, m, d] = ds.split("-"); return `${d}/${m}/${y}`; };
@@ -13,15 +11,23 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "Ju
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const makeDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
+const daysDiff = (dateStr) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.floor((today - target) / (1000 * 60 * 60 * 24));
+};
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 const Badge = ({ value }) => {
   const map = {
-    Out: { bg: "#fff3eb", color: "#c2410c" },
-    Returned: { bg: "#ecfdf5", color: "#15803d" },
-    Installed: { bg: "#eff6ff", color: "#1d4ed8" },
-    Demo: { bg: "#f5f3ff", color: "#6d28d9" },
-    Delivery: { bg: "#fefce8", color: "#854d0e" },
+    Out:          { bg: "#fff3eb", color: "#c2410c" },
+    Returned:     { bg: "#ecfdf5", color: "#15803d" },
+    Installed:    { bg: "#eff6ff", color: "#1d4ed8" },
+    Pending:      { bg: "#fef9c3", color: "#854d0e" },
+    Demo:         { bg: "#f5f3ff", color: "#6d28d9" },
+    Delivery:     { bg: "#fefce8", color: "#854d0e" },
     Installation: { bg: "#eff6ff", color: "#1d4ed8" },
   };
   const s = map[value] || { bg: "#f3f4f6", color: "#374151" };
@@ -45,7 +51,7 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const spaceBelow = window.innerHeight - rect.bottom;
           setDropPos({
-            top: spaceBelow < 180 ? rect.top - 150 : rect.bottom + 5,
+            top: spaceBelow < 200 ? rect.top - 180 : rect.bottom + 5,
             left: rect.left,
           });
           setOpen(!open);
@@ -61,12 +67,7 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
 
       {open && (
         <>
-          {/* backdrop */}
-          <div
-            onClick={() => setOpen(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 9998 }}
-          />
-          {/* ✅ fixed position — not clipped by parent overflow */}
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
           <div style={{
             position: "fixed",
             top: dropPos.top,
@@ -76,37 +77,28 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
             border: "1px solid #e5e7eb",
             borderRadius: 10,
             boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            minWidth: 170,
+            minWidth: 180,
             overflow: "hidden",
           }}>
-            <button
-              onClick={() => { onEdit(entry); setOpen(false); }}
-              style={dropItemSt("#f97316")}
-            >
+            <button onClick={() => { onEdit(entry); setOpen(false); }} style={dropItemSt("#f97316")}>
               ✏️ Edit
             </button>
             <div style={{ height: 1, background: "#f0f0f0" }} />
-            {entry.status === "Out" && (
+            {(entry.status === "Out" || entry.status === "Pending") && (
               <>
-                <button
-                  onClick={() => { onMark(entry.id, "Returned"); setOpen(false); }}
-                  style={dropItemSt("#16a34a")}
-                >
+                <button onClick={() => { onMark(entry.id, "Pending"); setOpen(false); }} style={dropItemSt("#854d0e")}>
+                  ⏳ Mark Pending
+                </button>
+                <button onClick={() => { onMark(entry.id, "Returned"); setOpen(false); }} style={dropItemSt("#16a34a")}>
                   ✅ Mark Returned
                 </button>
-                <button
-                  onClick={() => { onMark(entry.id, "Installed"); setOpen(false); }}
-                  style={dropItemSt("#2563eb")}
-                >
+                <button onClick={() => { onMark(entry.id, "Installed"); setOpen(false); }} style={dropItemSt("#2563eb")}>
                   🔧 Mark Installed
                 </button>
                 <div style={{ height: 1, background: "#f0f0f0" }} />
               </>
             )}
-            <button
-              onClick={() => { onDelete(entry.id); setOpen(false); }}
-              style={dropItemSt("#dc2626")}
-            >
+            <button onClick={() => { onDelete(entry.id); setOpen(false); }} style={dropItemSt("#dc2626")}>
               🗑️ Delete
             </button>
           </div>
@@ -115,12 +107,14 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
     </div>
   );
 };
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const PERSONS = ["Revathi", "Suresh", "Manoj", "Naveen", "Venkatesh"];
 
 const emptyForm = (date) => ({
   product: "", client: "", person: "", type: "Demo",
   quantity: 1, date, out_time: nowTime(), notes: "",
+  expected_date: "",
 });
 
 const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) => {
@@ -131,14 +125,15 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
     if (open) {
       if (editEntry) {
         setForm({
-          product: editEntry.product || "",
-          client: editEntry.client || "",
-          person: editEntry.person || "",
-          type: editEntry.type || "Demo",
-          quantity: editEntry.quantity || 1,
-          date: editEntry.date || selectedDate,
-          out_time: editEntry.out_time || nowTime(),
-          notes: editEntry.notes || "",
+          product:       editEntry.product       || "",
+          client:        editEntry.client        || "",
+          person:        editEntry.person        || "",
+          type:          editEntry.type          || "Demo",
+          quantity:      editEntry.quantity      || 1,
+          date:          editEntry.date          || selectedDate,
+          out_time:      editEntry.out_time      || nowTime(),
+          notes:         editEntry.notes         || "",
+          expected_date: editEntry.expected_date || "",
         });
       } else {
         setForm(emptyForm(selectedDate));
@@ -177,14 +172,12 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
             placeholder="e.g. Video Door Bell" style={inputSt} />
         </div>
 
-        {/* ✅ Quantity */}
         <div style={fieldWrap}>
           <label style={labelSt}>Quantity *</label>
           <input type="number" min="1" value={form.quantity}
-            onChange={e => set("quantity", Number(e.target.value))}
-            style={inputSt} />
+            onChange={e => set("quantity", Number(e.target.value))} style={inputSt} />
           <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>
-            e.g. enter 2 if two video door bells are taken out
+            e.g. enter 2 if two units are taken out
           </div>
         </div>
 
@@ -213,12 +206,22 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
           <div>
-            <label style={labelSt}>Date</label>
+            <label style={labelSt}>Out date</label>
             <input type="date" value={form.date} onChange={e => set("date", e.target.value)} style={inputSt} />
           </div>
           <div>
             <label style={labelSt}>Out time</label>
             <input type="time" value={form.out_time} onChange={e => set("out_time", e.target.value)} style={inputSt} />
+          </div>
+        </div>
+
+        {/* ✅ Expected completion date */}
+        <div style={fieldWrap}>
+          <label style={labelSt}>Expected completion date</label>
+          <input type="date" value={form.expected_date}
+            onChange={e => set("expected_date", e.target.value)} style={inputSt} />
+          <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>
+            For multi-day work — when do you expect this to be done?
           </div>
         </div>
 
@@ -243,18 +246,19 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProductMovement() {
   const now = new Date();
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const [viewYear,     setViewYear]     = useState(now.getFullYear());
+  const [viewMonth,    setViewMonth]    = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState(todayStr());
-  const [entries, setEntries] = useState([]);
-  const [stats, setStats] = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0 });
-  const [calDots, setCalDots] = useState({});
-  const [filters, setFilters] = useState({ status: "", person: "", type: "" });
-  const [dbPersons, setDbPersons] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [entries,      setEntries]      = useState([]);
+  const [pending,      setPending]      = useState([]);
+  const [stats,        setStats]        = useState({ Total: 0, Out: 0, Returned: 0, Installed: 0, Pending: 0 });
+  const [calDots,      setCalDots]      = useState({});
+  const [filters,      setFilters]      = useState({ status: "", person: "", type: "" });
+  const [dbPersons,    setDbPersons]    = useState([]);
+  const [modalOpen,    setModalOpen]    = useState(false);
+  const [editEntry,    setEditEntry]    = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [isMobile,     setIsMobile]     = useState(window.innerWidth < 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -264,9 +268,9 @@ export default function ProductMovement() {
 
   const fetchMonthDots = useCallback(async () => {
     const from = makeDateStr(viewYear, viewMonth, 1);
-    const to = makeDateStr(viewYear, viewMonth, getDaysInMonth(viewYear, viewMonth));
+    const to   = makeDateStr(viewYear, viewMonth, getDaysInMonth(viewYear, viewMonth));
     try {
-      const res = await fetch(`${API}?from_date=${from}&to_date=${to}`, { credentials: "include" });
+      const res  = await fetch(`${API}?from_date=${from}&to_date=${to}`, { credentials: "include" });
       const data = await res.json();
       const dots = {};
       (Array.isArray(data) ? data : []).forEach(e => { dots[e.date] = true; });
@@ -280,8 +284,8 @@ export default function ProductMovement() {
       const params = new URLSearchParams({ date: selectedDate });
       if (filters.status) params.append("status", filters.status);
       if (filters.person) params.append("person", filters.person);
-      if (filters.type) params.append("type", filters.type);
-      const res = await fetch(`${API}?${params}`, { credentials: "include" });
+      if (filters.type)   params.append("type",   filters.type);
+      const res  = await fetch(`${API}?${params}`, { credentials: "include" });
       const data = await res.json();
       setEntries(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -290,7 +294,7 @@ export default function ProductMovement() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/stats/summary?date=${selectedDate}`, { credentials: "include" });
+      const res  = await fetch(`${API}/stats/summary?date=${selectedDate}`, { credentials: "include" });
       const data = await res.json();
       setStats(data);
     } catch (e) { console.error(e); }
@@ -298,15 +302,23 @@ export default function ProductMovement() {
 
   const fetchPersons = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/meta/persons`, { credentials: "include" });
+      const res  = await fetch(`${API}/meta/persons`, { credentials: "include" });
       const data = await res.json();
       setDbPersons(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
   }, []);
 
+  const fetchPending = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/pending`, { credentials: "include" });
+      const data = await res.json();
+      setPending(Array.isArray(data) ? data : []);
+    } catch (e) { console.error(e); }
+  }, []);
+
   useEffect(() => { fetchMonthDots(); }, [fetchMonthDots]);
   useEffect(() => { fetchEntries(); fetchStats(); }, [fetchEntries, fetchStats]);
-  useEffect(() => { fetchPersons(); }, [fetchPersons]);
+  useEffect(() => { fetchPersons(); fetchPending(); }, [fetchPersons, fetchPending]);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -326,19 +338,15 @@ export default function ProductMovement() {
   const handleSave = async (form) => {
     try {
       if (editEntry) {
-
         const res = await fetch(`${API}/${editEntry.id}`, {
-          method: "PATCH",
-          credentials: "include",
+          method: "PATCH", credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
         if (!res.ok) throw new Error("Failed");
       } else {
-
         const res = await fetch(API, {
-          method: "POST",
-          credentials: "include",
+          method: "POST", credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
@@ -346,20 +354,19 @@ export default function ProductMovement() {
       }
       setModalOpen(false);
       setEditEntry(null);
-      fetchEntries(); fetchStats(); fetchMonthDots(); fetchPersons();
+      fetchEntries(); fetchStats(); fetchMonthDots(); fetchPersons(); fetchPending();
     } catch (e) { alert("Failed to save."); }
   };
 
   const markStatus = async (id, status) => {
     try {
       const res = await fetch(`${API}/${id}`, {
-        method: "PATCH",
-        credentials: "include",
+        method: "PATCH", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, return_time: nowTime() }),
       });
       if (!res.ok) throw new Error("Failed");
-      fetchEntries(); fetchStats();
+      fetchEntries(); fetchStats(); fetchPending();
     } catch (e) { alert("Failed to update status."); }
   };
 
@@ -367,7 +374,7 @@ export default function ProductMovement() {
     if (!confirm("Delete this entry?")) return;
     try {
       await fetch(`${API}/${id}`, { method: "DELETE", credentials: "include" });
-      fetchEntries(); fetchStats(); fetchMonthDots();
+      fetchEntries(); fetchStats(); fetchMonthDots(); fetchPending();
     } catch (e) { alert("Failed to delete."); }
   };
 
@@ -378,19 +385,20 @@ export default function ProductMovement() {
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
-  const daysInMonth = getDaysInMonth(viewYear, viewMonth);
+  const daysInMonth  = getDaysInMonth(viewYear, viewMonth);
   const firstWeekDay = getFirstDayOfMonth(viewYear, viewMonth);
-  const calCells = [];
+  const calCells     = [];
   for (let i = 0; i < firstWeekDay; i++) calCells.push(null);
   for (let d = 1; d <= daysInMonth; d++) calCells.push(makeDateStr(viewYear, viewMonth, d));
 
-  const todayFull = todayStr();
+  const todayFull  = todayStr();
   const allPersons = [...new Set(["Revathi", "Suresh", "Manoj", "Naveen", ...dbPersons])];
+  const overdueCount = pending.filter(p => p.overdue).length;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f6", padding: "1.25rem 1.5rem" }}>
 
-
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem", flexWrap: "wrap", gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", margin: 0 }}>Product Movement Log</h1>
@@ -402,13 +410,13 @@ export default function ProductMovement() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: "1.5rem" }}
-        className="md:grid-cols-4">
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(5,1fr)", gap: 10, marginBottom: "1.5rem" }}>
         {[
-          { label: "Total out today", val: stats.Total, color: "#111" },
-          { label: "Not returned", val: stats.Out, color: "#dc2626" },
-          { label: "Returned", val: stats.Returned, color: "#16a34a" },
-          { label: "Installed", val: stats.Installed, color: "#2563eb" },
+          { label: "Total out today", val: stats.Total,     color: "#111"    },
+          { label: "Not returned",    val: stats.Out,       color: "#dc2626" },
+          { label: "Pending",         val: stats.Pending,   color: "#854d0e" },
+          { label: "Returned",        val: stats.Returned,  color: "#16a34a" },
+          { label: "Installed",       val: stats.Installed, color: "#2563eb" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #f0f0f0" }}>
             <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{label}</div>
@@ -417,166 +425,218 @@ export default function ProductMovement() {
         ))}
       </div>
 
-      {/* ✅ Responsive layout — stacks on mobile */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-        {/* Calendar — full width on mobile, 300px on desktop */}
-
-
+      {/* ✅ Pending / Overdue Section */}
+      {pending.length > 0 && (
         <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: 20,
-          alignItems: "flex-start"
+          background: overdueCount > 0 ? "#fff7ed" : "#f0fdf4",
+          border: `1px solid ${overdueCount > 0 ? "#fed7aa" : "#bbf7d0"}`,
+          borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.5rem"
         }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: overdueCount > 0 ? "#c2410c" : "#15803d" }}>
+              {overdueCount > 0 ? `⚠️ Pending & Overdue (${overdueCount} overdue)` : `⏳ Pending Work (${pending.length})`}
+            </h3>
+          </div>
 
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #f0f0f0", padding: "1rem", minWidth: 280, flex: "0 0 auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <button onClick={prevMonth} style={navBtn}>‹</button>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
-                {MONTH_NAMES[viewMonth]} {viewYear}
-              </span>
-              <button onClick={nextMonth} style={navBtn}>›</button>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
-              {DAY_LABELS.map(d => (
-                <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#aaa", fontWeight: 600, padding: "2px 0" }}>{d}</div>
-              ))}
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-              {calCells.map((ds, i) => {
-                if (!ds) return <div key={`empty-${i}`} />;
-                const isSelected = ds === selectedDate;
-                const isToday = ds === todayFull;
-                const hasDot = calDots[ds];
-                return (
-                  <div key={ds} onClick={() => handleDayClick(ds)} style={{
-                    borderRadius: 8, padding: "6px 2px", textAlign: "center", cursor: "pointer",
-                    background: isSelected ? "#f97316" : isToday ? "#fff7ed" : "transparent",
-                    border: isToday && !isSelected ? "1px solid #f97316" : "1px solid transparent",
-                  }}>
-                    <div style={{ fontSize: 12, fontWeight: isSelected || isToday ? 700 : 400, color: isSelected ? "#fff" : isToday ? "#f97316" : "#333" }}>
-                      {Number(ds.split("-")[2])}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {pending.map((item) => {
+              const diff = item.expected_date ? daysDiff(item.expected_date) : null;
+              const isOverdue = item.overdue;
+              return (
+                <div key={item.id} style={{
+                  background: "#fff",
+                  border: `1px solid ${isOverdue ? "#fca5a5" : "#e5e7eb"}`,
+                  borderRadius: 10, padding: "12px 16px",
+                  display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center",
+                  justifyContent: "space-between"
+                }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, color: "#111" }}>{item.product}</span>
+                      <span style={{ fontSize: 11, color: "#f97316", fontWeight: 600 }}>x{item.quantity || 1}</span>
+                      <Badge value={item.status} />
+                      {isOverdue && (
+                        <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20 }}>
+                          {diff}d overdue
+                        </span>
+                      )}
                     </div>
-                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: hasDot ? (isSelected ? "#fff" : "#f97316") : "transparent", margin: "2px auto 0" }} />
+                    <div style={{ fontSize: 12, color: "#666", display: "flex", flexWrap: "wrap", gap: 12 }}>
+                      <span>👤 {item.client}</span>
+                      <span>🔧 {item.person}</span>
+                      <span>📅 Out: {fmtDisplay(item.date)}</span>
+                      {item.expected_date && (
+                        <span style={{ color: isOverdue ? "#dc2626" : "#666" }}>
+                          🎯 Expected: {fmtDisplay(item.expected_date)}
+                        </span>
+                      )}
+                    </div>
+                    {item.notes && <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>{item.notes}</div>}
                   </div>
-                );
-              })}
-            </div>
-
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5", display: "flex", gap: 12 }}>
-              {[{ color: "#f97316", label: "Selected", dot: false }, { color: "#f97316", label: "Has data", dot: true }].map(({ color, label, dot }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#888" }}>
-                  {dot ? <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} /> : <div style={{ width: 12, height: 12, borderRadius: 3, background: color }} />}
-                  {label}
+                  <ActionDropdown entry={item} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
+        </div>
+      )}
 
-          {/* Table section */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#555" }}>
-              Showing: {fmtDisplay(selectedDate)}
-            </div>
+      {/* Calendar + Table layout */}
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, alignItems: "flex-start" }}>
 
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
-              <select value={filters.status} onChange={e => setFilter("status", e.target.value)} style={selectSt}>
-                <option value="">All status</option>
-                <option value="Out">Out</option>
-                <option value="Returned">Returned</option>
-                <option value="Installed">Installed</option>
-              </select>
-              <select value={filters.type} onChange={e => setFilter("type", e.target.value)} style={selectSt}>
-                <option value="">All types</option>
-                <option value="Demo">Demo</option>
-                <option value="Delivery">Delivery</option>
-                <option value="Installation">Installation</option>
-              </select>
-              <select value={filters.person} onChange={e => setFilter("person", e.target.value)} style={selectSt}>
-                <option value="">All persons</option>
-                {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-
-            {/* ✅ Desktop Table */}
-            {/* ✅ Desktop Table — hidden on mobile */}
-            {!isMobile && (
-              <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
-                {loading ? (
-                  <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
-                ) : entries.length === 0 ? (
-                  <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
-                ) : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, whiteSpace: "nowrap" }}>
-                      <thead>
-                        <tr style={{ background: "#fafafa" }}>
-                          {["Product", "Qty", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
-                            <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: 11, color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {entries.map((e, i) => (
-                          <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                            <td style={tdSt}>
-                              <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
-                              {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
-                            </td>
-                            <td style={tdSt}><span style={{ fontWeight: 600, color: "#f97316" }}>{e.quantity || 1}</span></td>
-                            <td style={tdSt}>{e.client}</td>
-                            <td style={tdSt}>{e.person}</td>
-                            <td style={tdSt}><Badge value={e.type} /></td>
-                            <td style={{ ...tdSt, color: "#666" }}>{e.out_time || "—"}</td>
-                            <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
-                            <td style={tdSt}><Badge value={e.status} /></td>
-                            <td style={tdSt}>
-                              <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+        {/* Calendar */}
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #f0f0f0", padding: "1rem", minWidth: 280, flex: "0 0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <button onClick={prevMonth} style={navBtn}>‹</button>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+              {MONTH_NAMES[viewMonth]} {viewYear}
+            </span>
+            <button onClick={nextMonth} style={navBtn}>›</button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
+            {DAY_LABELS.map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#aaa", fontWeight: 600, padding: "2px 0" }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+            {calCells.map((ds, i) => {
+              if (!ds) return <div key={`empty-${i}`} />;
+              const isSelected = ds === selectedDate;
+              const isToday    = ds === todayFull;
+              const hasDot     = calDots[ds];
+              return (
+                <div key={ds} onClick={() => handleDayClick(ds)} style={{
+                  borderRadius: 8, padding: "6px 2px", textAlign: "center", cursor: "pointer",
+                  background: isSelected ? "#f97316" : isToday ? "#fff7ed" : "transparent",
+                  border: isToday && !isSelected ? "1px solid #f97316" : "1px solid transparent",
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: isSelected || isToday ? 700 : 400, color: isSelected ? "#fff" : isToday ? "#f97316" : "#333" }}>
+                    {Number(ds.split("-")[2])}
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* ✅ Mobile Cards — shown only on mobile */}
-            {isMobile && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {loading ? (
-                  <div style={{ padding: "2rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
-                ) : entries.length === 0 ? (
-                  <div style={{ padding: "2rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
-                ) : (
-                  entries.map((e) => (
-                    <div key={e.id} style={{ background: "#fff", borderRadius: 12, padding: 16, border: "1px solid #f0f0f0" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                        <div>
-                          <p style={{ fontWeight: 700, color: "#111", margin: 0 }}>{e.product}</p>
-                          <p style={{ fontSize: 12, color: "#f97316", margin: "2px 0 0", fontWeight: 600 }}>Qty: {e.quantity || 1}</p>
-                        </div>
-                        <Badge value={e.status} />
-                      </div>
-                      <div style={{ fontSize: 13, color: "#555", display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                        <p style={{ margin: 0 }}><b>Client:</b> {e.client}</p>
-                        <p style={{ margin: 0 }}><b>Person:</b> {e.person}</p>
-                        <p style={{ margin: 0 }}><b>Type:</b> <Badge value={e.type} /></p>
-                        <p style={{ margin: 0 }}><b>Out:</b> {e.out_time || "—"} &nbsp; <b>Return:</b> {e.return_time || "—"}</p>
-                        {e.notes && <p style={{ margin: 0, color: "#aaa", fontSize: 12 }}>{e.notes}</p>}
-                      </div>
-                      <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", background: hasDot ? (isSelected ? "#fff" : "#f97316") : "transparent", margin: "2px auto 0" }} />
+                </div>
+              );
+            })}
           </div>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5", display: "flex", gap: 12 }}>
+            {[{ color: "#f97316", label: "Selected", dot: false }, { color: "#f97316", label: "Has data", dot: true }].map(({ color, label, dot }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#888" }}>
+                {dot ? <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} /> : <div style={{ width: 12, height: 12, borderRadius: 3, background: color }} />}
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: filters + table */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#555" }}>
+            Showing: {fmtDisplay(selectedDate)}
+          </div>
+
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
+            <select value={filters.status} onChange={e => setFilter("status", e.target.value)} style={selectSt}>
+              <option value="">All status</option>
+              <option value="Out">Out</option>
+              <option value="Pending">Pending</option>
+              <option value="Returned">Returned</option>
+              <option value="Installed">Installed</option>
+            </select>
+            <select value={filters.type} onChange={e => setFilter("type", e.target.value)} style={selectSt}>
+              <option value="">All types</option>
+              <option value="Demo">Demo</option>
+              <option value="Delivery">Delivery</option>
+              <option value="Installation">Installation</option>
+            </select>
+            <select value={filters.person} onChange={e => setFilter("person", e.target.value)} style={selectSt}>
+              <option value="">All persons</option>
+              {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+
+          {/* Desktop Table */}
+          {!isMobile && (
+            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "visible" }}>
+              {loading ? (
+                <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
+              ) : entries.length === 0 ? (
+                <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
+              ) : (
+                <div style={{ overflowX: "auto", borderRadius: 12 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, whiteSpace: "nowrap" }}>
+                    <thead>
+                      <tr style={{ background: "#fafafa" }}>
+                        {["Product", "Qty", "Client", "Sales person", "Type", "Out date", "Expected", "Return time", "Status", "Actions"].map(h => (
+                          <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: 11, color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entries.map((e, i) => (
+                        <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                          <td style={tdSt}>
+                            <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
+                            {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
+                          </td>
+                          <td style={tdSt}><span style={{ fontWeight: 600, color: "#f97316" }}>{e.quantity || 1}</span></td>
+                          <td style={tdSt}>{e.client}</td>
+                          <td style={tdSt}>{e.person}</td>
+                          <td style={tdSt}><Badge value={e.type} /></td>
+                          <td style={{ ...tdSt, color: "#666" }}>{e.out_time ? `${fmtDisplay(e.date)} ${e.out_time}` : fmtDisplay(e.date)}</td>
+                          <td style={{ ...tdSt, color: e.expected_date && e.expected_date < todayFull ? "#dc2626" : "#666" }}>
+                            {e.expected_date ? fmtDisplay(e.expected_date) : "—"}
+                          </td>
+                          <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
+                          <td style={tdSt}><Badge value={e.status} /></td>
+                          <td style={tdSt}>
+                            <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mobile Cards */}
+          {isMobile && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {loading ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
+              ) : entries.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
+              ) : (
+                entries.map((e) => (
+                  <div key={e.id} style={{ background: "#fff", borderRadius: 12, padding: 16, border: "1px solid #f0f0f0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                      <div>
+                        <p style={{ fontWeight: 700, color: "#111", margin: 0 }}>{e.product}</p>
+                        <p style={{ fontSize: 12, color: "#f97316", margin: "2px 0 0", fontWeight: 600 }}>Qty: {e.quantity || 1}</p>
+                      </div>
+                      <Badge value={e.status} />
+                    </div>
+                    <div style={{ fontSize: 13, color: "#555", display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                      <p style={{ margin: 0 }}><b>Client:</b> {e.client}</p>
+                      <p style={{ margin: 0 }}><b>Person:</b> {e.person}</p>
+                      <p style={{ margin: 0 }}><b>Type:</b> <Badge value={e.type} /></p>
+                      <p style={{ margin: 0 }}><b>Out:</b> {e.out_time || "—"} &nbsp; <b>Return:</b> {e.return_time || "—"}</p>
+                      {e.expected_date && (
+                        <p style={{ margin: 0, color: e.expected_date < todayFull ? "#dc2626" : "#666" }}>
+                          <b>Expected:</b> {fmtDisplay(e.expected_date)}
+                          {e.expected_date < todayFull && " ⚠️ Overdue"}
+                        </p>
+                      )}
+                      {e.notes && <p style={{ margin: 0, color: "#aaa", fontSize: 12 }}>{e.notes}</p>}
+                    </div>
+                    <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -593,12 +653,12 @@ export default function ProductMovement() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const fieldWrap = { marginBottom: 12 };
-const labelSt = { display: "block", fontSize: 12, color: "#666", marginBottom: 4, fontWeight: 500 };
-const inputSt = { width: "100%", height: 36, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", color: "#111", outline: "none" };
-const selectSt = { height: 34, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#333", cursor: "pointer" };
-const orangeBtn = { height: 36, padding: "0 18px", background: "#f97316", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" };
-const cancelBtn = { height: 36, padding: "0 16px", background: "transparent", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#555" };
-const navBtn = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555" };
-const tdSt = { padding: "11px 14px", verticalAlign: "middle", color: "#444" };
+const fieldWrap  = { marginBottom: 12 };
+const labelSt    = { display: "block", fontSize: 12, color: "#666", marginBottom: 4, fontWeight: 500 };
+const inputSt    = { width: "100%", height: 36, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", color: "#111", outline: "none" };
+const selectSt   = { height: 34, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#333", cursor: "pointer" };
+const orangeBtn  = { height: 36, padding: "0 18px", background: "#f97316", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const cancelBtn  = { height: 36, padding: "0 16px", background: "transparent", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#555" };
+const navBtn     = { width: 28, height: 28, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 16, color: "#555" };
+const tdSt       = { padding: "11px 14px", verticalAlign: "middle", color: "#444" };
 const dropItemSt = (color) => ({ display: "block", width: "100%", textAlign: "left", padding: "10px 16px", fontSize: 13, fontWeight: 500, color, background: "transparent", border: "none", cursor: "pointer" });
