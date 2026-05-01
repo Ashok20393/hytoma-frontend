@@ -107,13 +107,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/submit-complaint" element={
-          <ProtectedRoute>
-            <Layout>
-              <ComplaintForm />
-            </Layout>
-          </ProtectedRoute>
-        } />
+        <Route path="/submit-complaint" element={<ComplaintForm />} />
 
         <Route path="/productmovement" element={
           <ProtectedRoute>
