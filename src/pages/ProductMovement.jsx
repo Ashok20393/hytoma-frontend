@@ -555,7 +555,7 @@ export default function ProductMovement() {
             </select>
           </div>
 
-          {/* Desktop Table */}
+         
           {!isMobile && (
             <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "visible" }}>
               {loading ? (
@@ -601,7 +601,7 @@ export default function ProductMovement() {
             </div>
           )}
 
-          {/* Mobile Cards */}
+          
           {isMobile && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {loading ? (
@@ -652,7 +652,7 @@ export default function ProductMovement() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const fieldWrap  = { marginBottom: 12 };
 const labelSt    = { display: "block", fontSize: 12, color: "#666", marginBottom: 4, fontWeight: 500 };
 const inputSt    = { width: "100%", height: 36, fontSize: 13, padding: "0 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", color: "#111", outline: "none" };
