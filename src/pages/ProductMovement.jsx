@@ -36,16 +36,16 @@ const Badge = ({ value }) => {
 // ─── Action Dropdown ──────────────────────────────────────────────────────────
 const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [openUp, setOpenUp] = useState(false);
+
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", display: "inline-block" }}>
       <button
         onClick={(e) => {
+          // ✅ Check if dropdown would go off screen bottom
           const rect = e.currentTarget.getBoundingClientRect();
-          setPos({
-            top: rect.bottom + 5,
-            left: rect.right - 170
-          });
+          const spaceBelow = window.innerHeight - rect.bottom;
+          setOpenUp(spaceBelow < 180); // open upward if not enough space below
           setOpen(!open);
         }}
         style={{
@@ -56,14 +56,16 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
       >
         Actions ▾
       </button>
+
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
           <div style={{
-            position: "fixed",
-            top: pos.top,
-            left: pos.left,
-            zIndex: 9999,
+            position: "absolute",
+            // ✅ open upward or downward based on space
+            ...(openUp ? { bottom: 38, top: "auto" } : { top: 38, bottom: "auto" }),
+            left: 0,   // ✅ align left instead of right to avoid cut off
+            zIndex: 200,
             background: "#fff",
             border: "1px solid #e5e7eb",
             borderRadius: 10,
@@ -71,7 +73,6 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
             minWidth: 170,
             overflow: "hidden",
           }}>
-            {/* ✅ Edit */}
             <button onClick={() => { onEdit(entry); setOpen(false); }} style={dropItemSt("#f97316")}>
               ✏️ Edit
             </button>
@@ -96,7 +97,6 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
     </div>
   );
 };
-
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const PERSONS = ["Revathi", "Suresh", "Manoj", "Naveen", "Venkatesh"];
 
