@@ -485,50 +485,79 @@ export default function ProductMovement() {
             </div>
 
             {/* ✅ Desktop Table */}
-            <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "visibe" }}>
-              {loading ? (
-                <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
-              ) : entries.length === 0 ? (
-                <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
-              ) : (
-                <div style={{
-                  overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "thin"
-                }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, whiteSpace: "nowrap" }}>
-                    <thead>
-                      <tr style={{ background: "#fafafa" }}>
-                        {["Product", "Qty", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
-                          <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: 11, color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0", whiteSpace: "nowrap" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entries.map((e, i) => (
-                        <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                          <td style={tdSt}>
-                            <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
-                            {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
-                          </td>
-                          <td style={tdSt}>
-                            <span style={{ fontWeight: 600, color: "#f97316" }}>{e.quantity || 1}</span>
-                          </td>
-                          <td style={tdSt}>{e.client}</td>
-                          <td style={tdSt}>{e.person}</td>
-                          <td style={tdSt}><Badge value={e.type} /></td>
-                          <td style={{ ...tdSt, color: "#666" }}>{e.out_time || "—"}</td>
-                          <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
-                          <td style={tdSt}><Badge value={e.status} /></td>
-                          <td style={tdSt}>
-                            <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
-                          </td>
+            {/* ✅ Desktop Table — hidden on mobile */}
+            {!isMobile && (
+              <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "hidden" }}>
+                {loading ? (
+                  <div style={{ padding: "2.5rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
+                ) : entries.length === 0 ? (
+                  <div style={{ padding: "2.5rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, whiteSpace: "nowrap" }}>
+                      <thead>
+                        <tr style={{ background: "#fafafa" }}>
+                          {["Product", "Qty", "Client", "Sales person", "Type", "Out time", "Return time", "Status", "Actions"].map(h => (
+                            <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: 11, color: "#999", fontWeight: 600, borderBottom: "1px solid #f0f0f0" }}>{h}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                      </thead>
+                      <tbody>
+                        {entries.map((e, i) => (
+                          <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                            <td style={tdSt}>
+                              <span style={{ fontWeight: 500, color: "#111" }}>{e.product}</span>
+                              {e.notes && <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{e.notes}</div>}
+                            </td>
+                            <td style={tdSt}><span style={{ fontWeight: 600, color: "#f97316" }}>{e.quantity || 1}</span></td>
+                            <td style={tdSt}>{e.client}</td>
+                            <td style={tdSt}>{e.person}</td>
+                            <td style={tdSt}><Badge value={e.type} /></td>
+                            <td style={{ ...tdSt, color: "#666" }}>{e.out_time || "—"}</td>
+                            <td style={{ ...tdSt, color: "#666" }}>{e.return_time || "—"}</td>
+                            <td style={tdSt}><Badge value={e.status} /></td>
+                            <td style={tdSt}>
+                              <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ✅ Mobile Cards — shown only on mobile */}
+            {isMobile && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {loading ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#aaa" }}>Loading...</div>
+                ) : entries.length === 0 ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#bbb" }}>No movements for {fmtDisplay(selectedDate)}</div>
+                ) : (
+                  entries.map((e) => (
+                    <div key={e.id} style={{ background: "#fff", borderRadius: 12, padding: 16, border: "1px solid #f0f0f0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                        <div>
+                          <p style={{ fontWeight: 700, color: "#111", margin: 0 }}>{e.product}</p>
+                          <p style={{ fontSize: 12, color: "#f97316", margin: "2px 0 0", fontWeight: 600 }}>Qty: {e.quantity || 1}</p>
+                        </div>
+                        <Badge value={e.status} />
+                      </div>
+                      <div style={{ fontSize: 13, color: "#555", display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                        <p style={{ margin: 0 }}><b>Client:</b> {e.client}</p>
+                        <p style={{ margin: 0 }}><b>Person:</b> {e.person}</p>
+                        <p style={{ margin: 0 }}><b>Type:</b> <Badge value={e.type} /></p>
+                        <p style={{ margin: 0 }}><b>Out:</b> {e.out_time || "—"} &nbsp; <b>Return:</b> {e.return_time || "—"}</p>
+                        {e.notes && <p style={{ margin: 0, color: "#aaa", fontSize: 12 }}>{e.notes}</p>}
+                      </div>
+                      <ActionDropdown entry={e} onMark={markStatus} onDelete={handleDelete} onEdit={handleEdit} />
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
