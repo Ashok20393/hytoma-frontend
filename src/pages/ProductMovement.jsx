@@ -193,7 +193,7 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
           </select>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 10, marginBottom: "1.5rem" }}>
           <div>
             <label style={labelSt}>Date</label>
             <input type="date" value={form.date} onChange={e => set("date", e.target.value)} style={inputSt} />
@@ -407,7 +407,7 @@ export default function ProductMovement() {
 
         <div style={{
           display: "flex",
-          flexDirection: window.innerWidth < 768 ? "column" : "row",
+          flexDirection: isMobile ? "column" : "row",
           gap: 20,
           alignItems: "flex-start"
         }}>
