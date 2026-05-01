@@ -36,16 +36,18 @@ const Badge = ({ value }) => {
 // ─── Action Dropdown ──────────────────────────────────────────────────────────
 const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
   const [open, setOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       <button
         onClick={(e) => {
-          // ✅ Check if dropdown would go off screen bottom
           const rect = e.currentTarget.getBoundingClientRect();
           const spaceBelow = window.innerHeight - rect.bottom;
-          setOpenUp(spaceBelow < 180); // open upward if not enough space below
+          setDropPos({
+            top: spaceBelow < 180 ? rect.top - 150 : rect.bottom + 5,
+            left: rect.left,
+          });
           setOpen(!open);
         }}
         style={{
@@ -59,36 +61,52 @@ const ActionDropdown = ({ entry, onMark, onDelete, onEdit }) => {
 
       {open && (
         <>
-          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
+          {/* backdrop */}
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+          />
+          {/* ✅ fixed position — not clipped by parent overflow */}
           <div style={{
-            position: "absolute",
-            // ✅ open upward or downward based on space
-            ...(openUp ? { bottom: 38, top: "auto" } : { top: 38, bottom: "auto" }),
-            left: 0,   // ✅ align left instead of right to avoid cut off
-            zIndex: 200,
+            position: "fixed",
+            top: dropPos.top,
+            left: dropPos.left,
+            zIndex: 9999,
             background: "#fff",
             border: "1px solid #e5e7eb",
             borderRadius: 10,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
             minWidth: 170,
             overflow: "hidden",
           }}>
-            <button onClick={() => { onEdit(entry); setOpen(false); }} style={dropItemSt("#f97316")}>
+            <button
+              onClick={() => { onEdit(entry); setOpen(false); }}
+              style={dropItemSt("#f97316")}
+            >
               ✏️ Edit
             </button>
             <div style={{ height: 1, background: "#f0f0f0" }} />
             {entry.status === "Out" && (
               <>
-                <button onClick={() => { onMark(entry.id, "Returned"); setOpen(false); }} style={dropItemSt("#16a34a")}>
+                <button
+                  onClick={() => { onMark(entry.id, "Returned"); setOpen(false); }}
+                  style={dropItemSt("#16a34a")}
+                >
                   ✅ Mark Returned
                 </button>
-                <button onClick={() => { onMark(entry.id, "Installed"); setOpen(false); }} style={dropItemSt("#2563eb")}>
+                <button
+                  onClick={() => { onMark(entry.id, "Installed"); setOpen(false); }}
+                  style={dropItemSt("#2563eb")}
+                >
                   🔧 Mark Installed
                 </button>
                 <div style={{ height: 1, background: "#f0f0f0" }} />
               </>
             )}
-            <button onClick={() => { onDelete(entry.id); setOpen(false); }} style={dropItemSt("#dc2626")}>
+            <button
+              onClick={() => { onDelete(entry.id); setOpen(false); }}
+              style={dropItemSt("#dc2626")}
+            >
               🗑️ Delete
             </button>
           </div>
@@ -193,7 +211,7 @@ const Modal = ({ open, onClose, onSave, selectedDate, dbPersons, editEntry }) =>
           </select>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 10, marginBottom: "1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
           <div>
             <label style={labelSt}>Date</label>
             <input type="date" value={form.date} onChange={e => set("date", e.target.value)} style={inputSt} />
