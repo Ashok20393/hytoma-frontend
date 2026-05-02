@@ -554,8 +554,7 @@ export default function ProductMovement() {
               {allPersons.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
-
-         
+        
           {!isMobile && (
             <div style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 12, overflow: "visible" }}>
               {loading ? (

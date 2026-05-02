@@ -4,6 +4,17 @@ import { logoutUser } from "../services/api";
 
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const role = localStorage.getItem("role");
+
+  // ✅ Permission helper
+  const can = (page) => {
+    if (role === "admin") return true;
+    if (role === "simanta") return page === "complaints";
+    if (role === "revathi") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory"].includes(page);
+    if (role === "inventory_manager") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory"].includes(page);
+    if (role === "sales") return ["dashboard", "leads", "add-lead", "sales", "sales-report"].includes(page);
+    return false;
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -23,17 +34,21 @@ export default function Layout({ children }) {
         ${menuOpen ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0 md:static md:z-auto
       `}>
-        <h1 className="text-xl font-bold text-orange-500 mb-8">Hytoma CRM</h1>
+        <NavLink to={role === "simanta" ? "/complaints" : "/"} onClick={() => setMenuOpen(false)}>
+          <h1 className="text-xl font-bold text-orange-500 mb-8 cursor-pointer hover:text-orange-600 transition">
+            Hytoma CRM
+          </h1>
+        </NavLink>
 
         <nav className="flex flex-col gap-2">
-          <NavItem to="/" label="Dashboard" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/leads" label="Leads" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/add-lead" label="Add Lead" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/sales" label="Sales Performance" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/inventory" label="Inventory" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/sales-report" label="Sales Report" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/complaints" label="Complaints" onClick={() => setMenuOpen(false)} />
-          <NavItem to="/productmovement" label="Product Movement" onClick={() => setMenuOpen(false)} />
+          {can("dashboard") && <NavItem to="/" label="Dashboard" onClick={() => setMenuOpen(false)} />}
+          {can("leads") && <NavItem to="/leads" label="Leads" onClick={() => setMenuOpen(false)} />}
+          {can("add-lead") && <NavItem to="/add-lead" label="Add Lead" onClick={() => setMenuOpen(false)} />}
+          {can("sales") && <NavItem to="/sales" label="Sales Performance" onClick={() => setMenuOpen(false)} />}
+          {can("inventory") && <NavItem to="/inventory" label="Inventory" onClick={() => setMenuOpen(false)} />}
+          {can("sales-report") && <NavItem to="/sales-report" label="Sales Report" onClick={() => setMenuOpen(false)} />}
+          {can("complaints") && <NavItem to="/complaints" label="Complaints" onClick={() => setMenuOpen(false)} />}
+          {role === "admin" && <NavItem to="/product-movement" label="Product Movement" onClick={() => setMenuOpen(false)} />}
         </nav>
 
         <button
@@ -46,18 +61,10 @@ export default function Layout({ children }) {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-auto">
-
-        {/* Mobile topbar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white shadow-sm">
           <h1 className="text-lg font-bold text-orange-500">Hytoma CRM</h1>
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="text-gray-600 text-2xl"
-          >
-            ☰
-          </button>
+          <button onClick={() => setMenuOpen(true)} className="text-gray-600 text-2xl">☰</button>
         </div>
-
         <div className="flex-1 bg-gray-50 p-4 md:p-6">
           {children}
         </div>
