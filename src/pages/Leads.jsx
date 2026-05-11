@@ -8,7 +8,7 @@ export default function Leads() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [personFilter, setPersonFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");  // ✅ new
+  const [dateFilter, setDateFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
 
   const navigate = useNavigate();
@@ -44,13 +44,11 @@ export default function Leads() {
     const matchesPerson =
       personFilter === "all" || lead.salesPerson === personFilter;
 
-    // ✅ Date filter
     const now = new Date();
     let matchesDate = true;
 
     if (dateFilter !== "all" && lead.createdAt) {
       const date = new Date(lead.createdAt);
-
       if (dateFilter === "today") {
         matchesDate = date.toDateString() === now.toDateString();
       }
@@ -93,6 +91,9 @@ export default function Leads() {
       AdvancePaid: l.advancePaid || 0,
       TotalAmount: l.totalAmount || 0,
       Pending: (l.totalAmount || 0) - (l.advancePaid || 0),
+      PendingAmountReason: l.pendingAmountReason || "",
+      AcceptanceReason: l.acceptanceReason || "",
+      RejectionReason: l.rejectionReason || "",
     }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
@@ -156,8 +157,6 @@ export default function Leads() {
             <option key={i} value={p}>{p}</option>
           ))}
         </select>
-
-        {/* ✅ Date filter */}
         <select
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
@@ -172,14 +171,14 @@ export default function Leads() {
         </select>
       </div>
 
-      {/* ✅ Result count */}
+      {/* Result count */}
       <p className="text-sm text-gray-500 mb-3">
         Showing {filteredLeads.length} lead{filteredLeads.length !== 1 ? "s" : ""}
       </p>
 
       {/* Desktop Table */}
       <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table className="w-full text-sm min-w-[800px]">
+        <table className="w-full text-sm min-w-[900px]">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-4 text-left">Name</th>
@@ -228,14 +227,24 @@ export default function Leads() {
                       </span>
                     )}
                   </td>
-                  <td className="p-4">
+                  {/* ✅ Remarks — now includes pendingAmountReason */}
+                  <td className="p-4 space-y-1">
+                    {lead.pendingAmountReason && (
+                      <div className="text-yellow-600 text-sm">
+                        💰 {lead.pendingAmountReason}
+                      </div>
+                    )}
                     {lead.acceptanceReason && (
-                      <div className="text-green-600 text-sm">✅ {lead.acceptanceReason}</div>
+                      <div className="text-green-600 text-sm">
+                        ✅ {lead.acceptanceReason}
+                      </div>
                     )}
                     {lead.rejectionReason && (
-                      <div className="text-red-500 text-sm">❌ {lead.rejectionReason}</div>
+                      <div className="text-red-500 text-sm">
+                        ❌ {lead.rejectionReason}
+                      </div>
                     )}
-                    {!lead.acceptanceReason && !lead.rejectionReason && (
+                    {!lead.pendingAmountReason && !lead.acceptanceReason && !lead.rejectionReason && (
                       <span className="text-gray-400 text-sm">—</span>
                     )}
                   </td>
@@ -298,6 +307,10 @@ export default function Leads() {
                     </span>
                   )}
                 </p>
+                {/* ✅ Pending Amount Reason in mobile card */}
+                {lead.pendingAmountReason && (
+                  <p className="text-yellow-600">💰 {lead.pendingAmountReason}</p>
+                )}
                 {lead.acceptanceReason && (
                   <p className="text-green-600">✅ {lead.acceptanceReason}</p>
                 )}
