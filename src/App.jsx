@@ -88,7 +88,7 @@ function App() {
         {/* Inventory — admin, revathi, inventory_manager only */}
         <Route path="/inventory" element={
           <ProtectedRoute>
-            <RoleRoute allowed={["admin", "revathi", "inventory_manager"]}>
+            <RoleRoute allowed={["admin", "revathi", "inventory_manager","simanta"]}>
               <Layout><Inventory /></Layout>
             </RoleRoute>
           </ProtectedRoute>

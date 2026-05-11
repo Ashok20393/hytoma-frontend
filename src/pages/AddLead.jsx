@@ -205,6 +205,13 @@ export default function AddLead() {
             <span className="text-gray-700">Quotation Sent</span>
           </label>
 
+          <input
+            placeholder="Pending Amount Reason"
+            value={form.pendingAmountReason || ""}
+            onChange={(e) => setForm({ ...form, pendingAmountReason: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+
           {/* Acceptance / Rejection */}
           <input
             placeholder="Acceptance Reason"

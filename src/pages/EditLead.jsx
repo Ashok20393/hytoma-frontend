@@ -18,6 +18,7 @@ export default function EditLead() {
     advancePaid: "",
     quotationSent: false,
     followUpDate: "",
+    pendingAmountReason: "",
     acceptanceReason: "",
     rejectionReason: "",
   });
@@ -40,7 +41,6 @@ export default function EditLead() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Phone validation
     if (!/^\d{10}$/.test(form.phone)) {
       showToast("❌ Please enter a valid 10-digit phone number");
       return;
@@ -69,9 +69,7 @@ export default function EditLead() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Edit Lead
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Edit Lead</h1>
 
       <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,8 +82,6 @@ export default function EditLead() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="border px-3 py-2 rounded-lg w-full"
             />
-
-            {/* ✅ Phone — numbers only, max 10 digits */}
             <div>
               <input
                 placeholder="Phone Number (10 digits)"
@@ -93,14 +89,11 @@ export default function EditLead() {
                 maxLength={10}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "");
-                  if (val.length <= 10) {
-                    setForm({ ...form, phone: val });
-                  }
+                  if (val.length <= 10) setForm({ ...form, phone: val });
                 }}
-                className={`border px-3 py-2 rounded-lg w-full ${form.phone && form.phone.length !== 10
-                  ? "border-red-400"
-                  : ""
-                  }`}
+                className={`border px-3 py-2 rounded-lg w-full ${
+                  form.phone && form.phone.length !== 10 ? "border-red-400" : ""
+                }`}
               />
               {form.phone && form.phone.length !== 10 && (
                 <p className="text-red-500 text-xs mt-1">
@@ -168,25 +161,21 @@ export default function EditLead() {
               type="number"
               placeholder="Total Amount"
               value={form.totalAmount}
-              onChange={(e) =>
-                setForm({ ...form, totalAmount: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, totalAmount: e.target.value })}
               className="border px-3 py-2 rounded-lg w-full"
             />
             <input
               type="number"
               placeholder="Advance Paid"
               value={form.advancePaid}
-              onChange={(e) =>
-                setForm({ ...form, advancePaid: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, advancePaid: e.target.value })}
               className="border px-3 py-2 rounded-lg w-full"
             />
           </div>
 
           {/* Remaining */}
           <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-            Remaining: ₹{(form.totalAmount || 0) - (form.advancePaid || 0)}
+            Remaining: ₹{(Number(form.totalAmount) || 0) - (Number(form.advancePaid) || 0)}
           </div>
 
           {/* Quotation */}
@@ -194,41 +183,47 @@ export default function EditLead() {
             <input
               type="checkbox"
               checked={form.quotationSent}
-              onChange={(e) =>
-                setForm({ ...form, quotationSent: e.target.checked })
-              }
+              onChange={(e) => setForm({ ...form, quotationSent: e.target.checked })}
               className="w-4 h-4 accent-orange-500"
             />
             <span className="text-gray-700">Quotation Sent</span>
           </label>
 
-          {/* Acceptance / Rejection */}
+          {/* ✅ Pending Amount Reason — NEW FIELD */}
           <input
-            placeholder="Acceptance Reason"
-            value={form.acceptanceReason || ""}
-            onChange={(e) =>
-              setForm({ ...form, acceptanceReason: e.target.value })
-            }
-            className="border px-3 py-2 rounded-lg w-full"
-          />
-          <input
-            placeholder="Rejection Reason"
-            value={form.rejectionReason || ""}
-            onChange={(e) =>
-              setForm({ ...form, rejectionReason: e.target.value })
-            }
+            placeholder="Pending Amount Reason"
+            value={form.pendingAmountReason || ""}
+            onChange={(e) => setForm({ ...form, pendingAmountReason: e.target.value })}
             className="border px-3 py-2 rounded-lg w-full"
           />
 
-          {/* Follow-up */}
+          {/* Acceptance Reason */}
           <input
-            type="date"
-            value={form.followUpDate ? form.followUpDate.split("T")[0] : ""}
-            onChange={(e) =>
-              setForm({ ...form, followUpDate: e.target.value })
-            }
+            placeholder="Acceptance Reason"
+            value={form.acceptanceReason || ""}
+            onChange={(e) => setForm({ ...form, acceptanceReason: e.target.value })}
             className="border px-3 py-2 rounded-lg w-full"
           />
+
+          {/* Rejection Reason */}
+          <input
+            placeholder="Rejection Reason"
+            value={form.rejectionReason || ""}
+            onChange={(e) => setForm({ ...form, rejectionReason: e.target.value })}
+            className="border px-3 py-2 rounded-lg w-full"
+          />
+
+          {/* ✅ Follow-up Date — mobile fixed */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Follow-up Date</label>
+            <input
+              type="date"
+              value={form.followUpDate ? form.followUpDate.split("T")[0] : ""}
+              onChange={(e) => setForm({ ...form, followUpDate: e.target.value })}
+              className="border px-3 py-2 rounded-lg w-full bg-white"
+              style={{ WebkitAppearance: "none", minHeight: "42px" }}
+            />
+          </div>
 
           {/* Buttons */}
           <div className="flex gap-3 pt-3">
@@ -249,7 +244,6 @@ export default function EditLead() {
 
         </form>
       </div>
-
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-lg text-sm">

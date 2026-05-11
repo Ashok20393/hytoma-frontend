@@ -137,3 +137,23 @@ export const getPendingMovements = async () => {
   });
   return res.json();
 };
+
+export const getImports = async () => {
+  const res = await fetch(`${API}/imports`, { credentials: "include" }); // ✅
+  return res.json();
+};
+
+export const addImport = async (data) => {
+  const res = await fetch(`${API}/imports`, {  // ✅
+    method: "POST", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const deleteImport = async (id) => {
+  await fetch(`${API}/imports/${id}`, {  // ✅
+    method: "DELETE", credentials: "include"
+  });
+};

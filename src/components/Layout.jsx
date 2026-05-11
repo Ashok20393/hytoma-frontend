@@ -9,7 +9,7 @@ export default function Layout({ children }) {
   // ✅ Permission helper
   const can = (page) => {
     if (role === "admin") return true;
-    if (role === "simanta") return page === "complaints";
+    if (role === "simanta") return ["complaints", "inventory"].includes(page);
     if (role === "revathi") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory"].includes(page);
     if (role === "inventory_manager") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory"].includes(page);
     if (role === "sales") return ["dashboard", "leads", "add-lead", "sales", "sales-report"].includes(page);

@@ -5,6 +5,7 @@ const API = import.meta.env.VITE_API_URL;
 
 export default function Login() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     username: "",
@@ -70,17 +71,21 @@ export default function Login() {
           </div>
 
           {/* Password */}
-          <div>
-            <label className="text-sm text-gray-600">Password</label>
+          <div style={{ position: "relative" }}>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter password"
               required
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-              className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none"
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none pr-10"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
 
           {/* Button */}
