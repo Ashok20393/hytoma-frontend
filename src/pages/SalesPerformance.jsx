@@ -41,56 +41,85 @@ export default function SalesPerformance() {
 
   const selectedKey = `${selectedYear}-${selectedMonth}`;
 
+  // ✅ Group revenue by month and person
   const monthlyData = {};
   leads.forEach((lead) => {
     if (!lead.createdAt) return;
     const month = getMonthKey(lead.createdAt);
-    const person = (lead.salesPerson || "").toLowerCase().trim(); // ✅ remove nameMap entirely
+    const person = (lead.salesPerson || "").toLowerCase().trim();
     if (!monthlyData[month]) monthlyData[month] = {};
     if (!monthlyData[month][person]) monthlyData[month][person] = { revenue: 0 };
     monthlyData[month][person].revenue += Number(lead.advancePaid) || 0;
   });
 
-  const finalData = {};
-  let carryForward = {};
+  // ✅ Calculate all months with carry forward
+const finalData = {};
+const carryForward = {};
 
-  const startYear = 2026;
-  const startMonth = 3;
+const today = new Date();
 
-  years.forEach((year) => {
-    for (let m = 0; m < 12; m++) {
-      const key = `${year}-${m}`;
-      finalData[key] = {};
+years.forEach((year) => {
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${m}`;
+    finalData[key] = {};
 
-      // ✅ Before start date — set zeros, no carry forward update
-      if (year < startYear || (year === startYear && m < startMonth)) {
-        Object.keys(targets).forEach((person) => {
-          finalData[key][person] = { achieved: 0, target: 0, pending: 0, percentage: 0 };
-        });
-        continue; // ✅ 'continue' works inside for loop correctly
-      }
-
+    // ✅ Skip months before April 2026
+    if (year < 2026 || (year === 2026 && m < 3)) {
       Object.keys(targets).forEach((person) => {
-        const baseTarget = targets[person];
-        const achieved = monthlyData[key]?.[person]?.revenue || 0;
-        const prevCarry = carryForward[person] || 0;
-        const target = baseTarget + prevCarry;
-        const pending = target - achieved;
         finalData[key][person] = {
-          achieved,
-          target,
-          pending,
-          percentage: target > 0 ? ((achieved / target) * 100).toFixed(1) : 0,
+          achieved: 0,
+          target: 0,
+          pending: 0,
+          percentage: 0,
         };
-        carryForward[person] = pending > 0 ? pending : 0; // ✅ always update
       });
+      continue;
     }
-  });
+
+    Object.keys(targets).forEach((person) => {
+      const baseTarget = targets[person];
+
+      const achieved =
+        monthlyData[key]?.[person]?.revenue || 0;
+
+      const prevCarry = carryForward[person] || 0;
+
+      const target = baseTarget + prevCarry;
+
+      const pending = Math.max(target - achieved, 0);
+
+      const percentage =
+        target > 0
+          ? Math.min((achieved / target) * 100, 100).toFixed(1)
+          : 0;
+
+      finalData[key][person] = {
+        achieved,
+        target,
+        pending,
+        percentage,
+      };
+
+      // ✅ Carry forward only for past/current months
+      const isPastOrCurrent =
+        year < today.getFullYear() ||
+        (year === today.getFullYear() &&
+          m <= today.getMonth());
+
+      if (isPastOrCurrent) {
+        carryForward[person] = pending;
+      }
+    });
+  }
+});
+
+// ✅ Selected month data
+const selectedMonthData = finalData[selectedKey] || {};
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
 
-      {/* ✅ Header — stacks on mobile */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-3">
         <h1 className="text-2xl font-bold">Sales Performance</h1>
         <div className="flex gap-2">
@@ -99,23 +128,19 @@ export default function SalesPerformance() {
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="border px-3 py-2 rounded-lg text-sm flex-1 md:flex-none"
           >
-            {years.map((y) => (
-              <option key={y}>{y}</option>
-            ))}
+            {years.map((y) => <option key={y}>{y}</option>)}
           </select>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
             className="border px-3 py-2 rounded-lg text-sm flex-1 md:flex-none"
           >
-            {monthsList.map((m, i) => (
-              <option key={i} value={i}>{m}</option>
-            ))}
+            {monthsList.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
         </div>
       </div>
 
-      {/* ✅ Desktop Table — hidden on mobile */}
+      {/* Desktop Table */}
       <div className="hidden md:block bg-white rounded-xl shadow mb-6 overflow-x-auto">
         <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-gray-100">
@@ -140,14 +165,14 @@ export default function SalesPerformance() {
                 (l) => Number(l.advancePaid || 0) > 0
               ).length;
               const conversion = total > 0 ? ((converted / total) * 100).toFixed(1) : 0;
-              const revenue = finalData[selectedKey]?.[person]?.achieved || 0;
+              const revenue = selectedMonthData[person]?.achieved || 0;
 
               return (
                 <tr key={i} className="border-b hover:bg-gray-50">
                   <td className="p-4 capitalize font-medium">{person}</td>
                   <td className="p-4">{total}</td>
                   <td className="p-4">{converted}</td>
-                  <td className="p-4 text-green-600 font-semibold">₹{revenue}</td>
+                  <td className="p-4 text-green-600 font-semibold">₹{revenue.toLocaleString()}</td>
                   <td className="p-4">{conversion}%</td>
                 </tr>
               );
@@ -156,7 +181,7 @@ export default function SalesPerformance() {
         </table>
       </div>
 
-      {/* ✅ Mobile Cards — shown only on mobile */}
+      {/* Mobile Cards */}
       <div className="md:hidden flex flex-col gap-3 mb-6">
         {Object.keys(targets).map((person, i) => {
           const personLeads = leads.filter(
@@ -170,7 +195,7 @@ export default function SalesPerformance() {
             (l) => Number(l.advancePaid || 0) > 0
           ).length;
           const conversion = total > 0 ? ((converted / total) * 100).toFixed(1) : 0;
-          const revenue = finalData[selectedKey]?.[person]?.achieved || 0;
+          const revenue = selectedMonthData[person]?.achieved || 0;
 
           return (
             <div key={i} className="bg-white rounded-xl shadow p-4">
@@ -186,7 +211,7 @@ export default function SalesPerformance() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2">
                   <p className="text-gray-500 text-xs">Revenue</p>
-                  <p className="font-semibold text-green-600">₹{revenue}</p>
+                  <p className="font-semibold text-green-600">₹{revenue.toLocaleString()}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2">
                   <p className="text-gray-500 text-xs">Conversion</p>
@@ -201,21 +226,29 @@ export default function SalesPerformance() {
       {/* Target vs Achieved */}
       <div className="bg-white rounded-xl shadow p-5 mb-6">
         <h2 className="font-semibold mb-4">Target vs Achieved</h2>
-        {Object.entries(finalData[selectedKey] || {}).map(([name, p], i) => (
+        {Object.entries(selectedMonthData).map(([name, p], i) => (
           <div key={i} className="mb-5">
             <div className="flex justify-between mb-2">
               <span className="capitalize font-medium">{name}</span>
-              {/* ✅ smaller text on mobile */}
-              <span className="text-sm text-gray-600">₹{p.achieved} / ₹{p.target}</span>
+              <span className="text-sm text-gray-600">
+                ₹{p.achieved.toLocaleString()} / ₹{p.target.toLocaleString()}
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className="bg-orange-500 h-3 rounded-full"
+                className={`h-3 rounded-full ${
+                  p.achieved >= p.target ? "bg-green-500" : "bg-orange-500"
+                }`}
                 style={{ width: `${p.percentage}%` }}
-              ></div>
+              />
             </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Pending ₹{p.pending}
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-gray-500">
+                {p.achieved >= p.target
+                  ? "✅ Target achieved!"
+                  : `Pending ₹${p.pending.toLocaleString()}`}
+              </span>
+              <span className="text-xs text-gray-500">{p.percentage}%</span>
             </div>
           </div>
         ))}
@@ -224,19 +257,23 @@ export default function SalesPerformance() {
       {/* Leaderboard */}
       <div className="bg-white rounded-xl shadow p-5">
         <h2 className="font-semibold mb-4">🏆 Leaderboard</h2>
-        {Object.entries(finalData[selectedKey] || {})
+        {Object.entries(selectedMonthData)
           .sort((a, b) => b[1].achieved - a[1].achieved)
           .map(([name, p], i) => (
             <div key={i} className="flex justify-between items-center border-b py-3">
               <div className="flex items-center gap-2">
-                {/* ✅ Show both number and medal */}
                 <span className="text-gray-500 font-medium w-5">{i + 1}.</span>
                 <span className="text-lg">
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "🏅"}
                 </span>
                 <span className="capitalize font-medium">{name}</span>
               </div>
-              <span className="text-green-600 font-semibold">₹{p.achieved}</span>
+              <div className="text-right">
+                <p className="text-green-600 font-semibold">₹{p.achieved.toLocaleString()}</p>
+                {p.achieved >= p.target && (
+                  <p className="text-xs text-green-500">Target hit! 🎉</p>
+                )}
+              </div>
             </div>
           ))}
       </div>
