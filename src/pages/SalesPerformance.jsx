@@ -58,13 +58,27 @@ const carryForward = {};
 
 const today = new Date();
 
+const allLeadDates = leads
+  .filter((l) => l.createdAt)
+  .map((l) => new Date(l.createdAt));
+
+const firstLeadDate =
+  allLeadDates.length > 0
+    ? new Date(Math.min(...allLeadDates))
+    : new Date();
+
+const startYear = firstLeadDate.getFullYear();
+const startMonth = firstLeadDate.getMonth();
+
 years.forEach((year) => {
   for (let m = 0; m < 12; m++) {
     const key = `${year}-${m}`;
     finalData[key] = {};
 
-    // ✅ Skip months before April 2026
-    if (year < 2026 || (year === 2026 && m < 3)) {
+    if (
+      year < startYear ||
+      (year === startYear && m < startMonth)
+    ) {
       Object.keys(targets).forEach((person) => {
         finalData[key][person] = {
           achieved: 0,
@@ -100,7 +114,7 @@ years.forEach((year) => {
         percentage,
       };
 
-      // ✅ Carry forward only for past/current months
+
       const isPastOrCurrent =
         year < today.getFullYear() ||
         (year === today.getFullYear() &&
@@ -113,7 +127,7 @@ years.forEach((year) => {
   }
 });
 
-// ✅ Selected month data
+
 const selectedMonthData = finalData[selectedKey] || {};
 
   return (
