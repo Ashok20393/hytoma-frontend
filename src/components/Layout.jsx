@@ -12,7 +12,7 @@ export default function Layout({ children }) {
     if (role === "simanta") return ["complaints", "inventory"].includes(page);
     if (role === "venkatesh") return ["Product movement"].includes(page);
     if (role === "revathi") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory"].includes(page);
-    if (role === "inventory_manager") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory", "Product movement"].includes(page);
+    if (role === "inventory_manager") return ["dashboard", "leads", "add-lead", "sales", "sales-report", "inventory", "Product Movement"].includes(page);
     if (role === "sales") return ["dashboard", "leads", "add-lead", "sales", "sales-report"].includes(page);
     return false;
   };
