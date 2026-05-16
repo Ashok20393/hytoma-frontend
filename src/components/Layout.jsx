@@ -49,6 +49,13 @@ export default function Layout({ children }) {
           {can("inventory") && <NavItem to="/inventory" label="Inventory" onClick={() => setMenuOpen(false)} />}
           {can("sales-report") && <NavItem to="/sales-report" label="Sales Report" onClick={() => setMenuOpen(false)} />}
           {can("complaints") && <NavItem to="/complaints" label="Complaints" onClick={() => setMenuOpen(false)} />}
+          {can("product-movement") && (
+            <NavItem
+              to="/product-movement"
+              label="Product Movement"
+              onClick={() => setMenuOpen(false)}
+            />
+          )}
           {role === "admin" && <NavItem to="/product-movement" label="Product Movement" onClick={() => setMenuOpen(false)} />}
         </nav>
 
