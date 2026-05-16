@@ -97,7 +97,7 @@ function App() {
         {/* Complaints — admin and simanta only */}
         <Route path="/complaints" element={
           <ProtectedRoute>
-            <RoleRoute allowed={["admin", "simanta"]}>
+            <RoleRoute allowed={["admin", "simanta", "venkatesh"]}>
               <Layout><Complaints /></Layout>
             </RoleRoute>
           </ProtectedRoute>
