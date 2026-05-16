@@ -106,7 +106,7 @@ function App() {
         {/* Product Movement — admin only */}
         <Route path="/product-movement" element={
           <ProtectedRoute>
-            <RoleRoute allowed={["admin"]}>
+            <RoleRoute allowed={["admin","revathi"]}>
               <Layout><ProductMovement /></Layout>
             </RoleRoute>
           </ProtectedRoute>
